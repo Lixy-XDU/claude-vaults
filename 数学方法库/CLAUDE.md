@@ -12,9 +12,9 @@
 github.com:Lixy-XDU/claude-vaults
 ```
 
-- **本机为全网核心**：所有 vault 配置的更新维护以本机为准（`c:\Users\81402\Desktop\数学方法\`），向外推送至 GitHub。
+- **本机为全网核心**：所有 vault 配置的更新维护以本机为准（`<obsidian-vault-path>`），向外推送至 GitHub。
 - **其他机器**：在会话启动时，通过 `git ls-remote` 检查远端仓库是否有新提交。若有更新，询问用户是否同步；无更新则静默跳过。
-- **修改后必须同步**：每次修改本项目 CLAUDE.md、模板或扩展提示词后，须在 `D:\git仓库\vaults\` 中 `git add -A && git commit` 提交，并 `git push` 至 GitHub。
+- **修改后必须同步**：每次修改本项目 CLAUDE.md、模板或扩展提示词后，须在 `D:\git仓库\claude-vaults\` 中 `git add -A && git commit` 提交，并 `git push` 至 GitHub。
 - **分支策略**：禁止直接向 `master` 提交。每次修改从 `master` 拉出新分支（`feat/`、`fix/`、`chore/`），完成后合并回 `master` 再推送。
 - **同步前须按全局 CLAUDE.md 的脱密处理清单逐项检查**，确保无用户名、绝对路径、API 密钥等敏感信息。
 
