@@ -58,7 +58,17 @@ github.com:Lixy-XDU/claude-vaults
   - 引用独立方法（从其他目录）：`[[方法库/完整文件名|显示别名]]`
   - 同一目录内互相引用：`[[完整文件名|显示别名]]`
 - **不跳过理论工具**：论文若依赖某定理完成核心证明，该定理应入库，不能只提不建
-- **`方法库/` 和 `文献笔记/` 的路径交由 `/matlab-research-coder` 管理**：当任务涉及从这两个目录读取笔记并转为 MATLAB 代码实现或论文复现时，委托给该 skill 处理。本文件不再重复声明这两个目录的路径约定
+- **`方法库/` 和 `文献笔记/` 的路径交由 `/ml-research-coder` 管理**：当任务涉及从这两个目录读取笔记并转为 MATLAB 代码实现或论文复现时，委托给该 skill 处理。本文件不再重复声明这两个目录的路径约定
+
+---
+
+## matlab-research-coder 代码输出路径
+
+**硬性规则：`/ml-research-coder` 生成的 MATLAB 代码一律输出到 `code-workspace/` 子文件夹下。**
+
+1. 方法实现（Workflow A）→ `code-workspace/<方法名>/`
+2. 论文复现（Workflow B）→ `code-workspace/<论文简称>-reproduction/`
+3. 每次生成后确认输出落在 `code-workspace/` 内，不得散落到笔记目录
 
 ---
 
@@ -74,6 +84,7 @@ github.com:Lixy-XDU/claude-vaults
 | `html/` | Markdown→HTML 导出 | `/baoyu-markdown-to-html` 转换产物，可随时从 `.md` 重新生成 |
 | `paper/` | 原始 PDF 论文源文件 | 待处理/已处理的论文 PDF，供 `/pdf-extract` 读取；处理完成后保留源文件备查 |
 | `_extracted/` | PDF 文本提取中间产物 | `/pdf-extract` 输出的 `.txt` + `.meta.json`，为后续阅读/提炼提供文本输入；可随时从 PDF 重新生成 |
+| `code-workspace/` | MATLAB 代码工作区 | `/ml-research-coder` 生成的 MATLAB 项目代码，按方法名或论文简称分子目录 |
 
 根目录仅存放：
 
