@@ -9,10 +9,10 @@
 本文件及配套配置（`数学方法库模板.md`、`数学方法库-AI扩展提示词.md`）托管于 GitHub：
 
 ```text
-github.com:Lixy-XDU/claude-vaults
+github.com:<your-username>/claude-vaults
 ```
 
-- **本机为全网核心**：所有 vault 配置的更新维护以本机为准（`c:\Users\81402\Desktop\数学方法\`），向外推送至 GitHub。
+- **本机为全网核心**：所有 vault 配置的更新维护以本机为准（`<vault-path>`），向外推送至 GitHub。
 - **其他机器**：在会话启动时，通过 `git ls-remote` 检查远端仓库是否有新提交。若有更新，询问用户是否同步；无更新则静默跳过。
 - **修改后必须同步**：每次修改本项目 CLAUDE.md、模板或扩展提示词后，须在 `D:\git仓库\claude-vaults\` 中 `git add -A && git commit` 提交；**推送前必须向用户确认，得到授权后再 `git push`** 至 GitHub。
 - **分支策略**：禁止直接向 `master` 提交。每次修改从 `master` 拉出新分支（`feat/`、`fix/`、`chore/`），完成后合并回 `master` 再推送。
