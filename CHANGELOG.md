@@ -7,6 +7,8 @@
 - **chore**: `paper/` → `literature/`，按领域分四类子目录（`passive-radar/`、`leo-isac/`、`sar-imaging/`、`array-design/`），每类含 `目录.md` 索引
   - 提交: `04821f3`，已脱密
 - **chore**: Zotero 论文库整理 — 删除 Park 2025 重复条目、移除 SpaceX FCC 非学术文件、补全书章元数据
+- **chore**: literature/ 子分类移出 git 追踪 — 分类由用户自建，仅保留目录骨架（`b2cc2ab`）
+- **chore**: 添加完整目录骨架（`.gitkeep`）作为工作空间模板，含 `方法库/`、`理论工具/` 等空目录及索引骨架（`75a6afd`）
 
 ## 2026-05-14
 - **仓库**: claude-vaults
