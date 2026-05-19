@@ -1,1 +1,19 @@
-vaults/literature/
+# 用户生成内容 — 不入模板仓库
+vaults/literature/_extracted/*
+!vaults/literature/_extracted/.gitkeep
+vaults/literature/*.pdf
+vaults/literature/*/
+!vaults/literature/_extracted/
+vaults/code-workspace/*
+!vaults/code-workspace/.gitkeep
+vaults/html/*
+!vaults/html/.gitkeep
+vaults/方法库/*
+!vaults/方法库/.gitkeep
+!vaults/方法库/目录.md
+vaults/理论工具/*
+!vaults/理论工具/.gitkeep
+!vaults/理论工具/目录.md
+vaults/文献笔记/*
+!vaults/文献笔记/.gitkeep
+*.bak

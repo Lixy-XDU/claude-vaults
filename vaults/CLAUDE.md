@@ -14,9 +14,11 @@
 | `理论工具/` | 定理/引理级工具 | 精简版笔记，含定义、角色说明、被哪些方法依赖；含 `目录.md` 分类索引 |
 | `文献笔记/` | 论文阅读笔记 | `/literature-paper-reading` 产出的结构化阅读笔记 |
 | `html/` | Markdown→HTML 导出 | `/markdown-to-html` 转换产物，可随时从 `.md` 重新生成 |
-| `literature/` | 文献库（本地管理，不入 git） | 用户自行按领域建子分类，每类含 `目录.md` 索引；`literature/_extracted/` 存放 `/pdf-extract` 输出的 `.txt` + `.meta.json` |
+| `literature/` | 文献库 | 用户按领域自建子分类（如 `passive-radar/`），每类含 `目录.md` 索引；`literature/_extracted/` 存放 `/pdf-extract` 输出 |
 | `code-workspace/` | MATLAB 代码工作区 | `/ml-research-coder` 生成的 MATLAB 项目代码，按方法名或论文简称分子目录 |
 | `ppt/` | 论文转 PPT 输出 | `/paper-note-to-ppt-template` 的生成产物，每次任务在 `ppt/<任务缩写>/` 下建独立子文件夹 |
+
+> 以上目录在模板仓库中以空占位目录（`.gitkeep`）提供。用户克隆后自行填充内容。`方法库/`、`理论工具/` 下的 `目录.md` 随仓库同步，作为索引骨架。
 
 根目录仅存放 `CLAUDE.md`（项目约束）、`数学方法库模板.md`（16 节模板）、`数学方法库-AI扩展提示词.md`（AI 生成规范）。禁止在根目录或子目录中存放 `.bak` 备份文件、第三方工具配置（`.codebuddy/`、`.workbuddy/` 等）或与方法库无关的文档。
 
