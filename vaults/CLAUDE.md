@@ -14,7 +14,7 @@
 | `理论工具/` | 定理/引理级工具 | 精简版笔记，含定义、角色说明、被哪些方法依赖；含 `目录.md` 分类索引 |
 | `文献笔记/` | 论文阅读笔记 | `/literature-paper-reading` 产出的结构化阅读笔记 |
 | `html/` | Markdown→HTML 导出 | `/markdown-to-html` 转换产物，可随时从 `.md` 重新生成 |
-| `paper/` | 原始 PDF 论文源文件及提取产物 | 待处理/已处理的论文 PDF；`paper/_extracted/` 存放 `/pdf-extract` 输出的 `.txt` + `.meta.json` |
+| `literature/` | 文献库（PDF 及提取产物） | 按领域分 `passive-radar/`、`leo-isac/`、`sar-imaging/`、`array-design/` 四类，每类含 `目录.md` 索引；`literature/_extracted/` 存放 `/pdf-extract` 输出的 `.txt` + `.meta.json` |
 | `code-workspace/` | MATLAB 代码工作区 | `/ml-research-coder` 生成的 MATLAB 项目代码，按方法名或论文简称分子目录 |
 | `ppt/` | 论文转 PPT 输出 | `/paper-note-to-ppt-template` 的生成产物，每次任务在 `ppt/<任务缩写>/` 下建独立子文件夹 |
 
@@ -136,7 +136,7 @@ status: draft
 **硬性规则：`/paper-note-to-ppt-template` 的输入只能来自本库内部目录，输出一律落在 `ppt/<任务缩写>/` 下。**
 
 1. **笔记输入**：从 `文献笔记/` 子文件夹读取论文阅读笔记（`.md`），作为内容计划的主要来源
-2. **PDF 输入**：从 `paper/` 子文件夹读取原始 PDF 论文源文件，用于图表提取；若笔记中声明的 PDF 路径不在 `paper/` 下，应先提示用户将 PDF 复制到 `paper/` 中
+2. **PDF 输入**：从 `literature/<子分类>/` 读取原始 PDF 论文源文件，用于图表提取；若笔记中声明的 PDF 路径不在 `literature/` 下，应先提示用户将 PDF 复制到 `literature/<子分类>/` 中
 3. **任务子文件夹命名**：每次任务在 `ppt/` 下新建子文件夹，命名规则为 `<论文简称>-<场景>`，使用中文（如 `PCL-PET异构定位-组会`、`线谱估计-journal-club`），由 Claude 根据论文和场景自动拟定，首次执行时向用户确认
 4. **输出路径**：所有产物（`deck.pptx`、`content_plan.json`、`layout_plan.json`、`speaker_notes.md` 等）一律写入 `ppt/<任务缩写>/`
 5. **公式与图表资产**：公式 PNG 写入 `ppt/<任务缩写>/assets/formulas/`，提取的图表写入 `ppt/<任务缩写>/assets/figures/`
