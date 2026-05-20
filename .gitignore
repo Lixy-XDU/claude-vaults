@@ -4,6 +4,7 @@ vaults/literature/_extracted/*
 vaults/literature/*.pdf
 vaults/literature/*/
 !vaults/literature/_extracted/
+!vaults/literature/*/目录.md
 vaults/code-workspace/*
 !vaults/code-workspace/.gitkeep
 vaults/html/*
