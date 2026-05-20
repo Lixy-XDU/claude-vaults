@@ -14,7 +14,7 @@
 | `理论工具/` | 定理/引理级工具 | 精简版笔记，含定义、角色说明、被哪些方法依赖；含 `目录.md` 分类索引 |
 | `文献笔记/` | 论文阅读笔记 | `/literature-paper-reading` 产出的结构化阅读笔记；命名规则：`<来源子文件夹>-<AuthorYear>-<ShortTitle>.md`，禁止使用 `论文阅读-` 前缀 |
 | `html/` | Markdown→HTML 导出 | `/markdown-to-html` 转换产物，可随时从 `.md` 重新生成 |
-| `literature/` | 文献库（PDF 及提取产物） | 按领域分 `passive-radar/`、`leo-isac/`、`sar-imaging/`、`array-design/` 四类，每类含 `目录.md` 索引；`literature/_extracted/` 存放 `/pdf-extract` 输出的 `.txt` + `.meta.json` |
+| `literature/` | 文献库（PDF 及提取产物） | 按研究领域自建子分类，每类含 `目录.md` 索引；`literature/_extracted/` 存放 `/pdf-extract` 输出的 `.txt` + `.meta.json` |
 | `code-workspace/` | MATLAB 代码工作区 | `/ml-research-coder` 生成的 MATLAB 项目代码，按方法名或论文简称分子目录 |
 | `ppt/` | 论文转 PPT 输出 | `/paper-note-to-ppt-template` 的生成产物，每次任务在 `ppt/<任务缩写>/` 下建独立子文件夹 |
 | `.ai-memory/` | 科研工作流持久化状态 | planning-with-files 工作记忆（`task_plan.md`、`findings.md`、`progress.md`），跨会话恢复 |
