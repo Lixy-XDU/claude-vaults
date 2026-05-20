@@ -1,20 +1,48 @@
 # 用户生成内容 — 不入模板仓库
+
+# literature — 仅保留目录索引骨架
 vaults/literature/_extracted/*
 !vaults/literature/_extracted/.gitkeep
 vaults/literature/*.pdf
 vaults/literature/*/
 !vaults/literature/_extracted/
 !vaults/literature/*/目录.md
+
+# code-workspace — 仅保留骨架
 vaults/code-workspace/*
 !vaults/code-workspace/.gitkeep
+
+# html — 全部排除（从 .md 重新生成）
 vaults/html/*
 !vaults/html/.gitkeep
+
+# 方法库/ 理论工具/ — 仅保留目录索引
 vaults/方法库/*
 !vaults/方法库/.gitkeep
 !vaults/方法库/目录.md
 vaults/理论工具/*
 !vaults/理论工具/.gitkeep
 !vaults/理论工具/目录.md
+
+# 文献笔记 — 全部排除
 vaults/文献笔记/*
 !vaults/文献笔记/.gitkeep
+
+# ppt — 仅保留 README
+vaults/ppt/*
+!vaults/ppt/.gitkeep
+!vaults/ppt/README.md
+
+# .ai-memory — 仅保留骨架
+.ai-memory/*
+!.ai-memory/.gitkeep
+vaults/.ai-memory/*
+!vaults/.ai-memory/.gitkeep
+
+# research-notes — 仅保留 README
+vaults/research-notes/*
+!vaults/research-notes/.gitkeep
+!vaults/research-notes/README.md
+
+# 其他排除
 *.bak
