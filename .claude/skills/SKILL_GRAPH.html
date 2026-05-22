@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Claude Code Skill 关系图</title>
 <style>
 :root {
@@ -62,270 +62,9 @@ svg{width:100%;height:100%;display:block;background:radial-gradient(ellipse at 5
   .graph-wrap{height:620px}
   .footer-panels{grid-template-columns:1fr}
 }
-/* ============================================================
-   SKILL_GRAPH.html 移动端适配样式 — mobile-styles.css
-   屏幕宽度 ≤ 768px 时自动切换为卡片流 + 底部 Tab 栏
-   桌面端 (>768px) 保持力导向图，本文件不影响原有布局
-   ============================================================ */
-
-/* ---- 断点内才生效 ---- */
-@media (max-width: 768px) {
-
-  /* ---- 全局 ---- */
-  body {
-    padding-bottom: 72px;  /* 给底部 Tab 栏留空间 */
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  /* ---- Header 收缩 ---- */
-  header {
-    padding: 14px 16px 10px !important;
-  }
-  header h1 {
-    font-size: 20px !important;
-  }
-  header .sub {
-    font-size: 12px !important;
-    line-height: 1.5;
-  }
-
-  /* ---- 搜索栏固定在顶部 ---- */
-  .toolbar {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: var(--bg);
-    padding: 8px 16px 10px !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 8px !important;
-  }
-  .toolbar input {
-    grid-column: 1 / -1;
-    font-size: 16px !important;           /* 触摸优化：防 iOS 缩放 */
-    padding: 12px 14px !important;
-  }
-  .toolbar select {
-    font-size: 14px !important;
-    padding: 10px 8px !important;
-  }
-
-  /* ---- 隐藏桌面端面板（力导向图 / 侧栏列表 / 详情 / footer） ---- */
-  .layout,
-  .footer-panels {
-    display: none;
-  }
-
-  /* ---- 卡片流布局：从 skillList 面板复用数据 ---- */
-  /* 策略：用 JS 动态生成卡片是最佳方式，CSS 只定义卡片样式。
-     如果 HTML 中已存在 <section class="mobile-cards"> 则直接铺开 */
-  .mobile-cards,
-  .mobile-graph-panel {
-    display: block;
-    padding: 0 12px 16px;
-  }
-
-  .card {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 16px;
-    margin-bottom: 10px;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
-    transition: background 0.15s;
-  }
-  .card:active {
-    background: var(--accent-soft);
-  }
-
-  .card .card-name {
-    font-weight: 700;
-    font-size: 16px;
-    margin-bottom: 6px;
-    color: var(--text);
-  }
-
-  .card .card-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin-bottom: 8px;
-  }
-
-  .card .card-purpose {
-    font-size: 13px;
-    color: var(--muted);
-    line-height: 1.55;
-    margin-bottom: 8px;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .card .card-relations {
-    font-size: 12px;
-    color: var(--muted);
-    line-height: 1.7;
-  }
-
-  .card .card-relations code {
-    background: #f3f4f6;
-    padding: 1px 5px;
-    border-radius: 4px;
-    font-size: 11px;
-  }
-
-  /* ---- 移动端统计面板 ---- */
-  .mobile-stats {
-    display: none;
-    padding: 12px 16px 20px;
-  }
-  .stat-card {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 16px;
-    text-align: center;
-    display: inline-block;
-    width: calc(50% - 8px);
-    margin: 0 4px 10px;
-    box-shadow: 0 2px 6px rgba(15,23,42,0.04);
-  }
-  .stat-number {
-    font-size: 28px;
-    font-weight: 800;
-    color: var(--accent);
-  }
-  .stat-label {
-    font-size: 12px;
-    color: var(--muted);
-    margin-top: 4px;
-  }
-  .mobile-stats h3 {
-    font-size: 14px;
-    margin: 8px 0 12px;
-  }
-
-  /* ---- 底部 Tab 栏 ---- */
-  .mobile-tabs {
-    display: flex !important;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 200;
-    background: var(--panel);
-    border-top: 1px solid var(--border);
-    box-shadow: 0 -2px 12px rgba(15, 23, 42, 0.08);
-    height: 64px;
-    padding-bottom: env(safe-area-inset-bottom, 0);
-    -webkit-backdrop-filter: blur(12px);
-    backdrop-filter: blur(12px);
-  }
-
-  .mobile-tab {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    cursor: pointer;
-    color: var(--muted);
-    font-size: 11px;
-    font-weight: 500;
-    border: none;
-    background: none;
-    padding: 8px 4px;
-    transition: color 0.15s;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .mobile-tab.active {
-    color: var(--accent);
-  }
-
-  .mobile-tab .tab-icon {
-    font-size: 22px;
-    line-height: 1;
-  }
-
-  /* ---- 详情弹出层（移动端从底部滑出） ---- */
-  .mobile-detail-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 300;
-  }
-  .mobile-detail-overlay.open {
-    display: block;
-  }
-
-  .mobile-detail-sheet {
-    position: fixed;
-    bottom: 64px;  /* Tab 栏上方 */
-    left: 0;
-    right: 0;
-    max-height: 60vh;
-    background: var(--panel);
-    border-top: 1px solid var(--border);
-    border-radius: 16px 16px 0 0;
-    box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.12);
-    padding: 20px 16px 24px;
-    overflow-y: auto;
-    z-index: 301;
-    transform: translateY(100%);
-    transition: transform 0.25s ease;
-  }
-  .mobile-detail-sheet.open {
-    transform: translateY(0);
-  }
-
-  .mobile-detail-sheet .close-btn {
-    position: absolute;
-    top: 10px;
-    right: 14px;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: none;
-    background: #f3f4f6;
-    font-size: 18px;
-    line-height: 32px;
-    text-align: center;
-    cursor: pointer;
-    color: var(--muted);
-  }
-
-  /* ---- 触摸优化 ---- */
-  /* 最小触摸目标 44×44px (Apple HIG) */
-  button, select, .card, .mobile-tab {
-    min-height: 44px;
-  }
-
-  /* 禁用文本选择（卡片和按钮） */
-  .card, .mobile-tab, button {
-    -webkit-user-select: none;
-    user-select: none;
-  }
-
-  /* 滚动惯性和橡皮筋 */
-  .mobile-cards {
-    -webkit-overflow-scrolling: touch;
-    overflow-y: auto;
-  }
-
-  /* ---- 空状态 ---- */
-  .mobile-empty {
-    text-align: center;
-    color: var(--muted);
-    padding: 48px 16px;
-    font-size: 14px;
-  }
-
-}
-
+/* 移动端样式由外部 mobile-styles.css 提供 */
 </style>
-
+<link rel="stylesheet" href="mobile-styles.css" media="(max-width: 768px)">
 </head>
 <body>
 <header>
@@ -344,6 +83,50 @@ svg{width:100%;height:100%;display:block;background:radial-gradient(ellipse at 5
   <select id="scope"></select>
   <select id="status"></select>
 </section>
+
+<section id="mobileCards" class="mobile-cards"></section>
+<div id="mobileGraphPanel" class="mobile-graph-panel" style="display:none"></div>
+<nav class="mobile-tabs" style="display:none">
+  <button class="mobile-tab active" data-tab="cards">
+    <span class="tab-icon">&#9776;</span>列表
+  </button>
+  <button class="mobile-tab" data-tab="graph">
+    <span class="tab-icon">&#9711;</span>关系图
+  </button>
+  <button class="mobile-tab" data-tab="filters">
+    <span class="tab-icon">&#9651;</span>统计
+  </button>
+</nav>
+
+<section id="mobileStats" class="mobile-stats" style="display:none">
+  <div class="stat-card">
+    <div class="stat-number" id="statTotal">0</div>
+    <div class="stat-label">Skills 总数</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-number" id="statEdges">0</div>
+    <div class="stat-label">关系连接</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-number" id="statCategories">0</div>
+    <div class="stat-label">分类数</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-number" id="statIsolated">0</div>
+    <div class="stat-label">孤立节点</div>
+  </div>
+  <h3 style="margin:16px 0 8px">分类分布</h3>
+  <div id="statCategoryBars"></div>
+</section>
+
+<div id="mobileDetailOverlay" class="mobile-detail-overlay" style="display:none">
+  <div id="mobileDetailSheet" class="mobile-detail-sheet">
+    <button class="close-btn" id="mobileDetailClose">&#10005;</button>
+    <div id="mobileDetailContent"></div>
+  </div>
+</div>
+
+
 
 <main class="layout">
   <aside class="panel">
@@ -371,34 +154,13 @@ svg{width:100%;height:100%;display:block;background:radial-gradient(ellipse at 5
     <div id="detail" class="detail">点击左侧列表或图中的节点查看详情。</div>
   </aside>
 </main>
-<section id="mobileCards" class="mobile-cards"></section>
-<div id="mobileGraphPanel" class="mobile-graph-panel" style="display:none"></div>
-<nav class="mobile-tabs" style="display:none">
-  <button class="mobile-tab active" data-tab="cards"><span class="tab-icon">&#9776;</span>列表</button>
-  <button class="mobile-tab" data-tab="graph"><span class="tab-icon">&#9671;</span>关系图</button>
-  <button class="mobile-tab" data-tab="filters"><span class="tab-icon">&#9651;</span>统计</button>
-</nav>
-<div id="mobileDetailOverlay" class="mobile-detail-overlay" style="display:none">
-  <div id="mobileDetailSheet" class="mobile-detail-sheet" style="display:none">
-    <button id="mobileDetailClose" class="close-btn">&times;</button>
-    <div id="mobileDetailContent"></div>
-  </div>
-</div>
-<section id="mobileStats" class="mobile-stats" style="display:none">
-  <h3>统计摘要</h3>
-  <div class="stat-card"><div class="stat-number" id="statTotal">0</div><div class="stat-label">总节点</div></div>
-  <div class="stat-card"><div class="stat-number" id="statEdges">0</div><div class="stat-label">关系边</div></div>
-  <div class="stat-card"><div class="stat-number" id="statCategories">0</div><div class="stat-label">分类</div></div>
-  <div class="stat-card"><div class="stat-number" id="statIsolated">0</div><div class="stat-label">孤立节点</div></div>
-  <div id="statChart"></div>
-</section>
 
 <section class="footer-panels">
   <section class="panel"><h2>警告</h2><div id="warnings" class="detail"></div></section>
   <section class="panel"><h2>孤立节点</h2><div id="isolated" class="detail"></div></section>
 </section>
 
-<script id="skill-data" type="application/json">{"generated": "2026-05-22", "root": "C:\\Users\\81402\\.claude\\skills", "nodes": [{"name": "desktop-computer-automation", "title": "桌面自动化控制", "category": "工具", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-12", "purpose": "基于视觉的桌面自动化控制，通过 Midscene 使用自然语言指令操控桌面环境（macOS、Windows、Linux），完全依赖截图识别而非 DOM 或无障碍标签。", "relations": {"coordinates": [], "cooperates_with": [], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["Auto-generated metadata. Review category, purpose, and relationships."], "_dir": "C:\\Users\\81402\\.claude\\skills\\desktop-computer-automation", "_path": "C:\\Users\\81402\\.claude\\skills\\desktop-computer-automation\\skill.meta.yaml", "categories": ["工具"]}, {"name": "docx", "title": "DOCX 文档创建与编辑工具", "category": "文档与写作", "scope": "external", "status": "active", "version": "8.1.0", "updated": "2026-05-22", "purpose": "创建、编辑、标注、批注和验证 .docx 文件。对含公式、编号、标题、域、批注、修订、内容控件或复杂排版的现有文档默认采用保留样式的 OOXML 补丁方案，并始终在交付前进行渲染验证和结构审计。", "relations": {"coordinates": [], "cooperates_with": [], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["外部生态技能，含 26 个任务指南和 30+ 脚本。主要处理 OOXML 级别的 docx 操作。"], "_dir": "C:\\Users\\81402\\.claude\\skills\\docx", "_path": "C:\\Users\\81402\\.claude\\skills\\docx\\skill.meta.yaml", "categories": ["文档与写作"]}, {"name": "find-skills", "title": "查找技能", "category": "元技能", "scope": "personal", "status": "active", "version": "0.2.0", "updated": "2026-05-21", "purpose": "查找、推荐、发现和安装技能。本地优先——先在本地已安装技能中查找推荐，找不到再去开放技能生态搜索和安装。", "relations": {"coordinates": [], "cooperates_with": ["skill-creator", "skill-index"], "upstream": [], "downstream": ["skill-creator", "skill-index", "skill-graph"], "should_run_before": ["skill-creator", "skill-index"], "should_run_after": [], "supersedes": ["find-local-skills"], "overlaps_with": []}, "notes": ["合并了原 find-local-skills 的本地查找功能", "审计和索引生成移交 skill-index"], "_dir": "C:\\Users\\81402\\.claude\\skills\\find-skills", "_path": "C:\\Users\\81402\\.claude\\skills\\find-skills\\skill.meta.yaml", "categories": ["元技能"]}, {"name": "force-graph-physics", "title": "图模型可视化物理引擎", "category": "工具", "scope": "personal", "status": "active", "version": "0.2.0", "updated": "2026-05-15", "purpose": "构建或优化交互式 2D 力导向节点-边图可视化的权威参考。所有需要图可视化的 skill 必须委托给本 skill。", "relations": {"coordinates": [], "cooperates_with": ["skill-graph"], "upstream": [], "downstream": ["skill-graph"], "should_run_before": ["skill-graph"], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["工具型 skill，提供图可视化物理引擎的最佳实践和故障排查。skill-graph 的 generate_skill_graph_html.py 应遵循本 skill 的规则。", "所有需要构建图模型可视化的 skill 必须委托给本 skill。"], "_dir": "C:\\Users\\81402\\.claude\\skills\\force-graph-physics", "_path": "C:\\Users\\81402\\.claude\\skills\\force-graph-physics\\skill.meta.yaml", "categories": ["工具"]}, {"name": "literature-paper-reading", "title": "论文系统阅读", "category": "数学与方法库, 学术写作与出版", "scope": "personal", "status": "active", "version": "0.2.0", "updated": "2026-05-15", "purpose": "按 10 维度框架系统性阅读学术论文并产出结构化 Obsidian 笔记；支持中英文逐段对照全文阅读、图表裁剪嵌入、源锚点追溯。", "relations": {"coordinates": [], "cooperates_with": ["literature-to-math"], "upstream": ["pdf-extract"], "downstream": [], "should_run_before": [], "should_run_after": ["pdf-extract", "literature-to-math"], "supersedes": [], "overlaps_with": []}, "notes": ["协作链 A：pdf-extract → literature-paper-reading → literature-to-math → math-method-lib"], "_dir": "C:\\Users\\81402\\.claude\\skills\\literature-paper-reading", "_path": "C:\\Users\\81402\\.claude\\skills\\literature-paper-reading\\skill.meta.yaml", "categories": ["数学与方法库", "学术写作与出版"]}, {"name": "literature-to-math", "title": "文献数学方法提炼器", "category": "数学与方法库", "scope": "personal", "status": "active", "version": "0.2.0", "updated": "2026-05-15", "purpose": "从学术文献中提取数学方法，调用 /math-method-lib 结构化写入 Obsidian 知识库。默认 scan-only 模式（只扫描不写库），用户确认后进入 write-vault 模式。", "relations": {"coordinates": [], "cooperates_with": ["math-method-lib", "pdf-extract"], "upstream": ["math-method-lib", "pdf-extract"], "downstream": ["math-method-lib"], "should_run_before": [], "should_run_after": ["pdf-extract"], "supersedes": [], "overlaps_with": []}, "notes": ["v0.2.0 重构：双模式（scan-only / write-vault）、固定 method-context 格式、硬性去重规则、中断条件、批量确认表格。", "依赖 math-method-lib 完成 16 节模板生成。PDF 文本提取委托给 pdf-extract（三级策略：PyMuPDF → qpdf 解密 → OCR）。"], "_dir": "C:\\Users\\81402\\.claude\\skills\\literature-to-math", "_path": "C:\\Users\\81402\\.claude\\skills\\literature-to-math\\skill.meta.yaml", "categories": ["数学与方法库"]}, {"name": "markdown-to-html", "title": "Markdown 转 HTML 转换器", "category": "工具", "scope": "external", "status": "active", "version": "0.1.2", "updated": "2026-05-14", "purpose": "将 Markdown 转换为带内联 CSS 的精美 HTML，针对微信公众号等平台优化。支持代码高亮、LaTeX 数学公式、PlantUML、脚注、警告框、信息图表，以及可选的外部链接底部引用转换。", "relations": {"coordinates": [], "cooperates_with": [], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["自动生成的 metadata。建议手工检查 category、purpose 和 relations。"], "_dir": "C:\\Users\\81402\\.claude\\skills\\markdown-to-html", "_path": "C:\\Users\\81402\\.claude\\skills\\markdown-to-html\\skill.meta.yaml", "categories": ["工具"]}, {"name": "math-method-lib", "title": "数学方法库管理", "category": "数学与方法库", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-12", "purpose": "Add or edit entries in the mathematical methods library (数学方法库). Use when creating, expanding, or reviewing a mathematical method note that follows the 16-section Obsidian template.", "relations": {"coordinates": [], "cooperates_with": ["literature-to-math"], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["Auto-generated metadata. Review category, purpose, and relationships."], "_dir": "C:\\Users\\81402\\.claude\\skills\\math-method-lib", "_path": "C:\\Users\\81402\\.claude\\skills\\math-method-lib\\skill.meta.yaml", "categories": ["数学与方法库"]}, {"name": "ml-model-reconstructor", "title": "MATLAB 模型重建器", "category": "MATLAB, 数学与方法库", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-14", "purpose": "从 MATLAB 代码（.m 文件、代码片段、项目目录）中逆向重建底层数学模型、变量定义、推导过程和最终公式。针对信号处理和优化工作流优化，覆盖 DSP 流水线、滤波器、FFT/频谱分析、估计、最小二乘、凸/非线性优化等场景。", "relations": {"coordinates": [], "cooperates_with": [], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["Auto-generated metadata. Review category, purpose, and relationships.", "可与 literature-to-math 互补：后者从论文提取数学方法，本 skill 从代码重建数学模型。", "产出可对接 math-method-lib 入库。"], "_dir": "C:\\Users\\81402\\.claude\\skills\\ml-model-reconstructor", "_path": "C:\\Users\\81402\\.claude\\skills\\ml-model-reconstructor\\skill.meta.yaml", "categories": ["MATLAB", "数学与方法库"]}, {"name": "ml-research-coder", "title": "MATLAB 研究编码器", "category": "MATLAB, 数学与方法库", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-15", "purpose": "将本地 Markdown 方法笔记或文献笔记转化为 MATLAB 开发环境。触发条件：从数学推导、算法、数值方法、研究笔记或论文复现请求生成 MATLAB 实现。", "relations": {"coordinates": [], "cooperates_with": ["math-method-lib", "literature-to-math", "literature-paper-reading", "ml-model-reconstructor"], "upstream": ["math-method-lib", "literature-paper-reading"], "downstream": ["ml-model-reconstructor"], "should_run_before": [], "should_run_after": ["literature-paper-reading", "math-method-lib"], "supersedes": [], "overlaps_with": []}, "notes": ["从 方法库/ 和 文献笔记/ 目录读取 .md 笔记", "输出结构化的 MATLAB 项目（src/tests/examples/docs）", "分 Workflow A（方法实现）和 Workflow B（论文复现）", "路径约定委托给项目级 CLAUDE.md，不在本 skill 内硬编码"], "_dir": "C:\\Users\\81402\\.claude\\skills\\ml-research-coder", "_path": "C:\\Users\\81402\\.claude\\skills\\ml-research-coder\\skill.meta.yaml", "categories": ["MATLAB", "数学与方法库"]}, {"name": "nature", "title": "学术写作工作台", "category": "学术写作与出版", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-21", "purpose": "学术写作全流程工作台——润色、写作、图表、引用、数据声明、审稿回复、文献检索。调用后展示功能菜单。", "relations": {"coordinates": [], "cooperates_with": ["literature-paper-reading", "math-method-lib"], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["首次调用时展示功能菜单，让用户选择子任务"], "_dir": "C:\\Users\\81402\\.claude\\skills\\nature", "_path": "C:\\Users\\81402\\.claude\\skills\\nature\\skill.meta.yaml", "categories": ["学术写作与出版"]}, {"name": "paper-note-to-ppt-template", "title": "论文/笔记转PPT——PNG模板套装版", "category": "演示与文档", "scope": "personal", "status": "active", "version": "0.3.0", "updated": "2026-05-19", "source": "local", "purpose": "使用用户提供的 PNG 背景模板，按预设槽位叠加文字、公式（PNG）和图片，生成科研风格 PowerPoint。适用于组会汇报、journal club、课题汇报、开题/中期/答辩。", "relations": {"coordinates": [], "cooperates_with": ["pptx-layout-reverse"], "upstream": [], "downstream": ["pptx-layout-reverse"], "should_run_before": ["pptx-layout-reverse"], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["与 pptx-layout-reverse 构成闭环：生成 PPTX → 用户手动调整 → 逆向提取位置/字号 → 对比模板基准 → 更新模板参数", "通过 MML2OMML.xsl XSLT 管道支持 LaTeX→OMML 转换，但 python-pptx 不支持 OMML 渲染，当前公式默认走 PNG", "背景模板 80% 透明度叠加", "页型：title/agenda/section/one_column/two_column/three_column/image_text/closing"], "_dir": "C:\\Users\\81402\\.claude\\skills\\paper-note-to-ppt-template", "_path": "C:\\Users\\81402\\.claude\\skills\\paper-note-to-ppt-template\\skill.meta.yaml", "categories": ["演示与文档"]}, {"name": "pdf-extract", "title": "PDF 文本提取", "category": "工具", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-14", "purpose": "从 PDF 文件中提取纯文本，支持加密 PDF（qpdf 解密）与扫描版 OCR。三级策略：PyMuPDF 直接提取 → qpdf 解密 → tesseract OCR。供其他 skill 委托调用，禁止各 skill 自行实现 PDF 解析。", "relations": {"coordinates": [], "cooperates_with": ["literature-to-math", "literature-paper-reading"], "upstream": [], "downstream": ["literature-to-math", "literature-paper-reading"], "should_run_before": ["literature-paper-reading", "literature-to-math"], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["工具型 skill，通常由其他 skill 内部调用而非用户直接触发。disable-model-invocation: true。", "所有需要 PDF 文本的 skill 应通过本 skill 提取，不得自行实现 PyMuPDF / qpdf / OCR。", "依赖 _shared/load_config.py 读取 config.local.yaml 中的 tools.qpdf / tools.tesseract 路径。"], "_dir": "C:\\Users\\81402\\.claude\\skills\\pdf-extract", "_path": "C:\\Users\\81402\\.claude\\skills\\pdf-extract\\skill.meta.yaml", "categories": ["工具"]}, {"name": "planning-with-files", "title": "文件持久化工作计划", "category": "工具", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-19", "source": "local", "purpose": "以文件系统作为持久工作记忆，将复杂任务的计划（task_plan.md）、发现（findings.md）和进度（progress.md）写入磁盘，防止上下文窗口压缩或遗忘。适用于跨会话、长运行时间的编码、调试、研究、重构等任务。", "relations": {"coordinates": [], "cooperates_with": ["skill-creator"], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["默认输出目录为项目根 .ai-memory/", "适用于任何复杂 multi-step 任务，不只是 skill 开发"], "_dir": "C:\\Users\\81402\\.claude\\skills\\planning-with-files", "_path": "C:\\Users\\81402\\.claude\\skills\\planning-with-files\\skill.meta.yaml", "categories": ["工具"]}, {"name": "pptx-layout-reverse", "title": "PPTX→JSON 逆向还原", "category": "演示与文档", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-19", "source": "local", "purpose": "将 PowerPoint PPTX 逆向还原为 JSON 布局配置，提取文本框坐标、字体样式、slot 匹配、OMML 公式框、layout delta，用于更新模板参数。", "relations": {"coordinates": [], "cooperates_with": ["paper-note-to-ppt-template"], "upstream": ["paper-note-to-ppt-template"], "downstream": [], "should_run_before": [], "should_run_after": ["paper-note-to-ppt-template"], "supersedes": [], "overlaps_with": []}, "notes": ["与 paper-note-to-ppt-template 构成闭环：模板生成 PPTX → 用户手动调整 → 本技能逆向提取位置/字号 → 输出 delta 对比模板基准 → 回写更新 template_layouts_16x9.json 和 theme_tokens.json"], "_dir": "C:\\Users\\81402\\.claude\\skills\\pptx-layout-reverse", "_path": "C:\\Users\\81402\\.claude\\skills\\pptx-layout-reverse\\skill.meta.yaml", "categories": ["演示与文档"]}, {"name": "skill-creator", "title": "技能创建器", "category": "元技能", "scope": "personal", "status": "active", "version": "0.2.0", "updated": "2026-05-15", "purpose": "创建、改进、测试和从经验中蒸馏技能。支持 distill（从笔记/调试记录提炼）、create（从零创建并迭代测试）、improve（优化触发率）三种模式。", "relations": {"coordinates": [], "cooperates_with": [], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": [], "_dir": "C:\\Users\\81402\\.claude\\skills\\skill-creator", "_path": "C:\\Users\\81402\\.claude\\skills\\skill-creator\\skill.meta.yaml", "categories": ["元技能"]}, {"name": "skill-graph", "title": "技能关系图", "category": "元技能", "scope": "personal", "status": "active", "version": "0.5.0", "updated": "2026-05-21", "purpose": "为本地 Claude Code skills 创建和维护 skill.meta.yaml，并生成中文版 HTML 关系图。", "relations": {"coordinates": [], "cooperates_with": ["skill-index", "find-skills", "skill-creator"], "upstream": ["skill-creator", "force-graph-physics"], "downstream": ["skill-index"], "should_run_before": [], "should_run_after": ["skill-creator"], "supersedes": [], "overlaps_with": []}, "notes": ["负责关系可视化和 metadata 健康检查。", "不负责最终路由和分类治理，相关决策交给 skill-index。", "图可视化物理引擎遵循 force-graph-physics 的规则。修改 generate_skill_graph_html.py 时必须参考该 skill。", "find-local-skills 已合并至 find-skills，本文件引用已更新。"], "_dir": "C:\\Users\\81402\\.claude\\skills\\skill-graph", "_path": "C:\\Users\\81402\\.claude\\skills\\skill-graph\\skill.meta.yaml", "categories": ["元技能"]}, {"name": "skill-index", "title": "技能索引", "category": "元技能", "scope": "personal", "status": "active", "version": "0.2.0", "updated": "2026-05-21", "purpose": "协调、分类、路由、审计和维护本地技能系统。维护 SKILLS_INDEX.md，解决技能冲突，决定新技能的分类和存放位置。", "relations": {"coordinates": ["find-skills", "skill-graph", "skill-creator"], "cooperates_with": ["skill-graph"], "upstream": ["skill-graph", "skill-creator"], "downstream": [], "should_run_before": [], "should_run_after": ["skill-creator"], "supersedes": [], "overlaps_with": []}, "notes": ["所有本地技能的分类、路由和冲突解决的总协调层", "维护 SKILLS_INDEX.md", "审计功能（原 find-local-skills）已并入本技能"], "_dir": "C:\\Users\\81402\\.claude\\skills\\skill-index", "_path": "C:\\Users\\81402\\.claude\\skills\\skill-index\\skill.meta.yaml", "categories": ["元技能"]}, {"name": "skill-lifecycle", "title": "技能生命周期管理", "category": "元技能", "scope": "personal", "status": "active", "version": "0.2.0", "updated": "2026-05-15", "purpose": "统一管理本地技能的删除、禁用、启用和中文化，共享定位→确认→执行→更新索引→重建图流程。", "relations": {"coordinates": [], "cooperates_with": ["skill-index", "skill-graph"], "upstream": ["skill-index"], "downstream": ["skill-graph"], "should_run_before": [], "should_run_after": ["skill-index"], "supersedes": [], "overlaps_with": []}, "notes": [], "_dir": "C:\\Users\\81402\\.claude\\skills\\skill-lifecycle", "_path": "C:\\Users\\81402\\.claude\\skills\\skill-lifecycle\\skill.meta.yaml", "categories": ["元技能"]}, {"name": "skill-updater", "title": "技能更新器", "category": "元技能", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-14", "purpose": "从 claude-skills GitHub 仓库一键检查并拉取最新技能更新，同步 CLAUDE.md 模板。", "relations": {"coordinates": ["skill-index", "skill-graph"], "cooperates_with": [], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": ["skill-graph"], "supersedes": [], "overlaps_with": []}, "notes": ["Runs git fetch + git pull only, never modifies or creates skills", "Rebuilds SKILL_GRAPH.html after skill updates"], "_dir": "C:\\Users\\81402\\.claude\\skills\\skill-updater", "_path": "C:\\Users\\81402\\.claude\\skills\\skill-updater\\skill.meta.yaml", "categories": ["元技能"]}], "edges": [{"source": "find-skills", "target": "skill-creator", "type": "downstream", "label": "下游"}, {"source": "find-skills", "target": "skill-index", "type": "downstream", "label": "下游"}, {"source": "find-skills", "target": "skill-graph", "type": "downstream", "label": "下游"}, {"source": "force-graph-physics", "target": "skill-graph", "type": "downstream", "label": "下游"}, {"source": "pdf-extract", "target": "literature-paper-reading", "type": "upstream", "label": "上游"}, {"source": "literature-to-math", "target": "literature-paper-reading", "type": "should_run_after", "label": "后于"}, {"source": "math-method-lib", "target": "literature-to-math", "type": "upstream", "label": "上游"}, {"source": "pdf-extract", "target": "literature-to-math", "type": "upstream", "label": "上游"}, {"source": "literature-to-math", "target": "math-method-lib", "type": "downstream", "label": "下游"}, {"source": "math-method-lib", "target": "ml-research-coder", "type": "upstream", "label": "上游"}, {"source": "literature-paper-reading", "target": "ml-research-coder", "type": "upstream", "label": "上游"}, {"source": "ml-research-coder", "target": "ml-model-reconstructor", "type": "downstream", "label": "下游"}, {"source": "paper-note-to-ppt-template", "target": "pptx-layout-reverse", "type": "downstream", "label": "下游"}, {"source": "skill-creator", "target": "skill-graph", "type": "upstream", "label": "上游"}, {"source": "skill-graph", "target": "skill-index", "type": "downstream", "label": "下游"}, {"source": "skill-index", "target": "find-skills", "type": "coordinates", "label": "协调"}, {"source": "skill-index", "target": "skill-graph", "type": "coordinates", "label": "协调"}, {"source": "skill-index", "target": "skill-creator", "type": "coordinates", "label": "协调"}, {"source": "skill-creator", "target": "skill-index", "type": "upstream", "label": "上游"}, {"source": "skill-index", "target": "skill-lifecycle", "type": "upstream", "label": "上游"}, {"source": "skill-lifecycle", "target": "skill-graph", "type": "downstream", "label": "下游"}, {"source": "skill-updater", "target": "skill-index", "type": "coordinates", "label": "协调"}, {"source": "skill-updater", "target": "skill-graph", "type": "coordinates", "label": "协调"}, {"source": "skill-graph", "target": "skill-updater", "type": "should_run_after", "label": "后于"}], "warnings": ["`/find-skills` 的 `替代` 关系指向未知 skill：`find-local-skills`"], "isolated": ["desktop-computer-automation", "docx", "markdown-to-html", "nature", "planning-with-files"], "categories": ["元技能", "文档与写作", "学术写作与出版", "MATLAB", "数学与方法库", "工具", "演示与文档"], "scopes": ["external", "personal"], "statuses": ["active"], "relationLabels": {"coordinates": "协调", "cooperates_with": "协同", "upstream": "上游", "downstream": "下游", "should_run_before": "先于", "should_run_after": "后于", "supersedes": "替代", "overlaps_with": "重叠"}}</script>
+<script id="skill-data" type="application/json">{"generated": "2026-05-22", "root": "C:\\Users\\81402\\.claude\\skills", "nodes": [{"name": "desktop-computer-automation", "title": "桌面自动化控制", "category": "工具", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-12", "purpose": "基于视觉的桌面自动化控制，通过 Midscene 使用自然语言指令操控桌面环境（macOS、Windows、Linux），完全依赖截图识别而非 DOM 或无障碍标签。", "relations": {"coordinates": [], "cooperates_with": [], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["Auto-generated metadata. Review category, purpose, and relationships."], "_dir": "C:\\Users\\81402\\.claude\\skills\\desktop-computer-automation", "_path": "C:\\Users\\81402\\.claude\\skills\\desktop-computer-automation\\skill.meta.yaml", "categories": ["工具"]}, {"name": "docx", "title": "DOCX 文档创建与编辑工具", "category": "文档与写作", "scope": "external", "status": "active", "version": "8.1.0", "updated": "2026-05-22", "purpose": "创建、编辑、标注、批注和验证 .docx 文件。对含公式、编号、标题、域、批注、修订、内容控件或复杂排版的现有文档默认采用保留样式的 OOXML 补丁方案，并始终在交付前进行渲染验证和结构审计。", "relations": {"coordinates": [], "cooperates_with": [], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["外部生态技能，含 26 个任务指南和 30+ 脚本。主要处理 OOXML 级别的 docx 操作。"], "_dir": "C:\\Users\\81402\\.claude\\skills\\docx", "_path": "C:\\Users\\81402\\.claude\\skills\\docx\\skill.meta.yaml", "categories": ["文档与写作"]}, {"name": "find-skills", "title": "查找技能", "category": "元技能", "scope": "personal", "status": "active", "version": "0.2.0", "updated": "2026-05-21", "purpose": "查找、推荐、发现和安装技能。本地优先——先在本地已安装技能中查找推荐，找不到再去开放技能生态搜索和安装。", "relations": {"coordinates": [], "cooperates_with": ["skill-creator", "skill-index"], "upstream": [], "downstream": ["skill-creator", "skill-index", "skill-graph"], "should_run_before": ["skill-creator", "skill-index"], "should_run_after": [], "supersedes": ["find-local-skills"], "overlaps_with": []}, "notes": ["合并了原 find-local-skills 的本地查找功能", "审计和索引生成移交 skill-index"], "_dir": "C:\\Users\\81402\\.claude\\skills\\find-skills", "_path": "C:\\Users\\81402\\.claude\\skills\\find-skills\\skill.meta.yaml", "categories": ["元技能"]}, {"name": "force-graph-physics", "title": "图模型可视化物理引擎", "category": "工具", "scope": "personal", "status": "active", "version": "0.2.0", "updated": "2026-05-15", "purpose": "构建或优化交互式 2D 力导向节点-边图可视化的权威参考。所有需要图可视化的 skill 必须委托给本 skill。", "relations": {"coordinates": [], "cooperates_with": ["skill-graph"], "upstream": [], "downstream": ["skill-graph"], "should_run_before": ["skill-graph"], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["工具型 skill，提供图可视化物理引擎的最佳实践和故障排查。skill-graph 的 generate_skill_graph_html.py 应遵循本 skill 的规则。", "所有需要构建图模型可视化的 skill 必须委托给本 skill。"], "_dir": "C:\\Users\\81402\\.claude\\skills\\force-graph-physics", "_path": "C:\\Users\\81402\\.claude\\skills\\force-graph-physics\\skill.meta.yaml", "categories": ["工具"]}, {"name": "literature-paper-reading", "title": "论文系统阅读", "category": "数学与方法库, 学术写作与出版", "scope": "personal", "status": "active", "version": "0.2.0", "updated": "2026-05-15", "purpose": "按 10 维度框架系统性阅读学术论文并产出结构化 Obsidian 笔记；支持中英文逐段对照全文阅读、图表裁剪嵌入、源锚点追溯。", "relations": {"coordinates": [], "cooperates_with": ["literature-to-math"], "upstream": ["pdf-extract", "nature-academic-search"], "downstream": ["nature-writing", "content-to-slides"], "should_run_before": [], "should_run_after": ["pdf-extract", "literature-to-math"], "supersedes": ["nature-reader"], "overlaps_with": []}, "notes": ["2026-05-15 合并 nature-reader 全部功能（v0.2.0）", "协作链 A：pdf-extract → literature-paper-reading → literature-to-math → math-method-lib", "协作链 B：nature-academic-search → literature-paper-reading → nature-writing / content-to-slides"], "_dir": "C:\\Users\\81402\\.claude\\skills\\literature-paper-reading", "_path": "C:\\Users\\81402\\.claude\\skills\\literature-paper-reading\\skill.meta.yaml", "categories": ["数学与方法库", "学术写作与出版"]}, {"name": "literature-to-math", "title": "文献数学方法提炼器", "category": "数学与方法库", "scope": "personal", "status": "active", "version": "0.2.0", "updated": "2026-05-15", "purpose": "从学术文献中提取数学方法，调用 /math-method-lib 结构化写入 Obsidian 知识库。默认 scan-only 模式（只扫描不写库），用户确认后进入 write-vault 模式。", "relations": {"coordinates": [], "cooperates_with": ["math-method-lib", "pdf-extract"], "upstream": ["math-method-lib", "pdf-extract"], "downstream": ["math-method-lib"], "should_run_before": [], "should_run_after": ["pdf-extract"], "supersedes": [], "overlaps_with": []}, "notes": ["v0.2.0 重构：双模式（scan-only / write-vault）、固定 method-context 格式、硬性去重规则、中断条件、批量确认表格。", "依赖 math-method-lib 完成 16 节模板生成。PDF 文本提取委托给 pdf-extract（三级策略：PyMuPDF → qpdf 解密 → OCR）。"], "_dir": "C:\\Users\\81402\\.claude\\skills\\literature-to-math", "_path": "C:\\Users\\81402\\.claude\\skills\\literature-to-math\\skill.meta.yaml", "categories": ["数学与方法库"]}, {"name": "markdown-to-html", "title": "Markdown 转 HTML 转换器", "category": "工具", "scope": "external", "status": "active", "version": "0.1.2", "updated": "2026-05-14", "purpose": "将 Markdown 转换为带内联 CSS 的精美 HTML，针对微信公众号等平台优化。支持代码高亮、LaTeX 数学公式、PlantUML、脚注、警告框、信息图表，以及可选的外部链接底部引用转换。", "relations": {"coordinates": [], "cooperates_with": [], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["自动生成的 metadata。建议手工检查 category、purpose 和 relations。"], "_dir": "C:\\Users\\81402\\.claude\\skills\\markdown-to-html", "_path": "C:\\Users\\81402\\.claude\\skills\\markdown-to-html\\skill.meta.yaml", "categories": ["工具"]}, {"name": "math-method-lib", "title": "数学方法库管理", "category": "数学与方法库", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-12", "purpose": "Add or edit entries in the mathematical methods library (数学方法库). Use when creating, expanding, or reviewing a mathematical method note that follows the 16-section Obsidian template.", "relations": {"coordinates": [], "cooperates_with": ["literature-to-math"], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["Auto-generated metadata. Review category, purpose, and relationships."], "_dir": "C:\\Users\\81402\\.claude\\skills\\math-method-lib", "_path": "C:\\Users\\81402\\.claude\\skills\\math-method-lib\\skill.meta.yaml", "categories": ["数学与方法库"]}, {"name": "ml-model-reconstructor", "title": "MATLAB 模型重建器", "category": "MATLAB, 数学与方法库", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-14", "purpose": "从 MATLAB 代码（.m 文件、代码片段、项目目录）中逆向重建底层数学模型、变量定义、推导过程和最终公式。针对信号处理和优化工作流优化，覆盖 DSP 流水线、滤波器、FFT/频谱分析、估计、最小二乘、凸/非线性优化等场景。", "relations": {"coordinates": [], "cooperates_with": [], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["Auto-generated metadata. Review category, purpose, and relationships.", "可与 literature-to-math 互补：后者从论文提取数学方法，本 skill 从代码重建数学模型。", "产出可对接 math-method-lib 入库。"], "_dir": "C:\\Users\\81402\\.claude\\skills\\ml-model-reconstructor", "_path": "C:\\Users\\81402\\.claude\\skills\\ml-model-reconstructor\\skill.meta.yaml", "categories": ["MATLAB", "数学与方法库"]}, {"name": "ml-research-coder", "title": "MATLAB 研究编码器", "category": "MATLAB, 数学与方法库", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-15", "purpose": "将本地 Markdown 方法笔记或文献笔记转化为 MATLAB 开发环境。触发条件：从数学推导、算法、数值方法、研究笔记或论文复现请求生成 MATLAB 实现。", "relations": {"coordinates": [], "cooperates_with": ["math-method-lib", "literature-to-math", "literature-paper-reading", "ml-model-reconstructor"], "upstream": ["math-method-lib", "literature-paper-reading"], "downstream": ["ml-model-reconstructor"], "should_run_before": [], "should_run_after": ["literature-paper-reading", "math-method-lib"], "supersedes": [], "overlaps_with": []}, "notes": ["从 方法库/ 和 文献笔记/ 目录读取 .md 笔记", "输出结构化的 MATLAB 项目（src/tests/examples/docs）", "分 Workflow A（方法实现）和 Workflow B（论文复现）", "路径约定委托给项目级 CLAUDE.md，不在本 skill 内硬编码"], "_dir": "C:\\Users\\81402\\.claude\\skills\\ml-research-coder", "_path": "C:\\Users\\81402\\.claude\\skills\\ml-research-coder\\skill.meta.yaml", "categories": ["MATLAB", "数学与方法库"]}, {"name": "nature", "title": "学术写作工作台", "category": "学术写作与出版", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-21", "purpose": "学术写作全流程工作台——润色、写作、图表、引用、数据声明、审稿回复、文献检索。调用后展示功能菜单。", "relations": {"coordinates": [], "cooperates_with": ["literature-paper-reading", "math-method-lib"], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["首次调用时展示功能菜单，让用户选择子任务"], "_dir": "C:\\Users\\81402\\.claude\\skills\\nature", "_path": "C:\\Users\\81402\\.claude\\skills\\nature\\skill.meta.yaml", "categories": ["学术写作与出版"]}, {"name": "paper-note-to-ppt-template", "title": "论文/笔记转PPT——PNG模板套装版", "category": "演示与文档", "scope": "personal", "status": "active", "version": "0.3.0", "updated": "2026-05-19", "source": "local", "purpose": "使用用户提供的 PNG 背景模板，按预设槽位叠加文字、公式（PNG）和图片，生成科研风格 PowerPoint。适用于组会汇报、journal club、课题汇报、开题/中期/答辩。", "relations": {"coordinates": [], "cooperates_with": ["pptx-layout-reverse"], "upstream": [], "downstream": ["pptx-layout-reverse"], "should_run_before": ["pptx-layout-reverse"], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["与 pptx-layout-reverse 构成闭环：生成 PPTX → 用户手动调整 → 逆向提取位置/字号 → 对比模板基准 → 更新模板参数", "通过 MML2OMML.xsl XSLT 管道支持 LaTeX→OMML 转换，但 python-pptx 不支持 OMML 渲染，当前公式默认走 PNG", "背景模板 80% 透明度叠加", "页型：title/agenda/section/one_column/two_column/three_column/image_text/closing"], "_dir": "C:\\Users\\81402\\.claude\\skills\\paper-note-to-ppt-template", "_path": "C:\\Users\\81402\\.claude\\skills\\paper-note-to-ppt-template\\skill.meta.yaml", "categories": ["演示与文档"]}, {"name": "pdf-extract", "title": "PDF 文本提取", "category": "工具", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-14", "purpose": "从 PDF 文件中提取纯文本，支持加密 PDF（qpdf 解密）与扫描版 OCR。三级策略：PyMuPDF 直接提取 → qpdf 解密 → tesseract OCR。供其他 skill 委托调用，禁止各 skill 自行实现 PDF 解析。", "relations": {"coordinates": [], "cooperates_with": ["literature-to-math", "literature-paper-reading"], "upstream": [], "downstream": ["literature-to-math", "literature-paper-reading"], "should_run_before": ["literature-paper-reading", "literature-to-math"], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["工具型 skill，通常由其他 skill 内部调用而非用户直接触发。disable-model-invocation: true。", "所有需要 PDF 文本的 skill 应通过本 skill 提取，不得自行实现 PyMuPDF / qpdf / OCR。", "依赖 _shared/load_config.py 读取 config.local.yaml 中的 tools.qpdf / tools.tesseract 路径。"], "_dir": "C:\\Users\\81402\\.claude\\skills\\pdf-extract", "_path": "C:\\Users\\81402\\.claude\\skills\\pdf-extract\\skill.meta.yaml", "categories": ["工具"]}, {"name": "planning-with-files", "title": "文件持久化工作计划", "category": "工具", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-19", "source": "local", "purpose": "以文件系统作为持久工作记忆，将复杂任务的计划（task_plan.md）、发现（findings.md）和进度（progress.md）写入磁盘，防止上下文窗口压缩或遗忘。适用于跨会话、长运行时间的编码、调试、研究、重构等任务。", "relations": {"coordinates": [], "cooperates_with": ["skill-creator"], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["默认输出目录为项目根 .ai-memory/", "适用于任何复杂 multi-step 任务，不只是 skill 开发"], "_dir": "C:\\Users\\81402\\.claude\\skills\\planning-with-files", "_path": "C:\\Users\\81402\\.claude\\skills\\planning-with-files\\skill.meta.yaml", "categories": ["工具"]}, {"name": "pptx-layout-reverse", "title": "PPTX→JSON 逆向还原", "category": "演示与文档", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-19", "source": "local", "purpose": "将 PowerPoint PPTX 逆向还原为 JSON 布局配置，提取文本框坐标、字体样式、slot 匹配、OMML 公式框、layout delta，用于更新模板参数。", "relations": {"coordinates": [], "cooperates_with": ["paper-note-to-ppt-template"], "upstream": ["paper-note-to-ppt-template"], "downstream": [], "should_run_before": [], "should_run_after": ["paper-note-to-ppt-template"], "supersedes": [], "overlaps_with": []}, "notes": ["与 paper-note-to-ppt-template 构成闭环：模板生成 PPTX → 用户手动调整 → 本技能逆向提取位置/字号 → 输出 delta 对比模板基准 → 回写更新 template_layouts_16x9.json 和 theme_tokens.json"], "_dir": "C:\\Users\\81402\\.claude\\skills\\pptx-layout-reverse", "_path": "C:\\Users\\81402\\.claude\\skills\\pptx-layout-reverse\\skill.meta.yaml", "categories": ["演示与文档"]}, {"name": "skill-creator", "title": "技能创建器", "category": "元技能", "scope": "personal", "status": "active", "version": "0.2.0", "updated": "2026-05-15", "purpose": "创建、改进、测试和从经验中蒸馏技能。支持 distill（从笔记/调试记录提炼）、create（从零创建并迭代测试）、improve（优化触发率）三种模式。", "relations": {"coordinates": [], "cooperates_with": [], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["合并了 skill-distiller 的\"从经验蒸馏\"功能，统一为 distill 模式", "产出新 skill 后，skill-index 负责分类路由，skill-graph 负责关系图更新"], "_dir": "C:\\Users\\81402\\.claude\\skills\\skill-creator", "_path": "C:\\Users\\81402\\.claude\\skills\\skill-creator\\skill.meta.yaml", "categories": ["元技能"]}, {"name": "skill-graph", "title": "技能关系图", "category": "元技能", "scope": "personal", "status": "active", "version": "0.5.0", "updated": "2026-05-21", "purpose": "为本地 Claude Code skills 创建和维护 skill.meta.yaml，并生成中文版 HTML 关系图。", "relations": {"coordinates": [], "cooperates_with": ["skill-index", "find-skills", "skill-creator"], "upstream": ["skill-creator", "force-graph-physics"], "downstream": ["skill-index"], "should_run_before": [], "should_run_after": ["skill-creator"], "supersedes": [], "overlaps_with": []}, "notes": ["负责关系可视化和 metadata 健康检查。", "不负责最终路由和分类治理，相关决策交给 skill-index。", "图可视化物理引擎遵循 force-graph-physics 的规则。修改 generate_skill_graph_html.py 时必须参考该 skill。", "find-local-skills 已合并至 find-skills，本文件引用已更新。"], "_dir": "C:\\Users\\81402\\.claude\\skills\\skill-graph", "_path": "C:\\Users\\81402\\.claude\\skills\\skill-graph\\skill.meta.yaml", "categories": ["元技能"]}, {"name": "skill-index", "title": "技能索引", "category": "元技能", "scope": "personal", "status": "active", "version": "0.2.0", "updated": "2026-05-21", "purpose": "协调、分类、路由、审计和维护本地技能系统。维护 SKILLS_INDEX.md，解决技能冲突，决定新技能的分类和存放位置。", "relations": {"coordinates": ["find-skills", "skill-graph", "skill-creator"], "cooperates_with": ["skill-graph"], "upstream": ["skill-graph", "skill-creator"], "downstream": [], "should_run_before": [], "should_run_after": ["skill-creator"], "supersedes": [], "overlaps_with": []}, "notes": ["所有本地技能的分类、路由和冲突解决的总协调层", "维护 SKILLS_INDEX.md", "审计功能（原 find-local-skills）已并入本技能"], "_dir": "C:\\Users\\81402\\.claude\\skills\\skill-index", "_path": "C:\\Users\\81402\\.claude\\skills\\skill-index\\skill.meta.yaml", "categories": ["元技能"]}, {"name": "skill-lifecycle", "title": "技能生命周期管理", "category": "元技能", "scope": "personal", "status": "active", "version": "0.2.0", "updated": "2026-05-15", "purpose": "统一管理本地技能的删除、禁用、启用和中文化，共享定位→确认→执行→更新索引→重建图流程。", "relations": {"coordinates": [], "cooperates_with": ["skill-index", "skill-graph"], "upstream": ["skill-index"], "downstream": ["skill-graph"], "should_run_before": [], "should_run_after": ["skill-index"], "supersedes": ["skill-rm", "skill-disable"], "overlaps_with": []}, "notes": ["合并了 skill-rm 和 skill-disable 的功能，统一为子命令模式"], "_dir": "C:\\Users\\81402\\.claude\\skills\\skill-lifecycle", "_path": "C:\\Users\\81402\\.claude\\skills\\skill-lifecycle\\skill.meta.yaml", "categories": ["元技能"]}, {"name": "skill-updater", "title": "技能更新器", "category": "元技能", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-14", "purpose": "从 claude-skills GitHub 仓库一键检查并拉取最新技能更新，同步 CLAUDE.md 模板。", "relations": {"coordinates": ["skill-index", "skill-graph"], "cooperates_with": [], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": ["skill-graph"], "supersedes": [], "overlaps_with": []}, "notes": ["Runs git fetch + git pull only, never modifies or creates skills", "Rebuilds SKILL_GRAPH.html after skill updates"], "_dir": "C:\\Users\\81402\\.claude\\skills\\skill-updater", "_path": "C:\\Users\\81402\\.claude\\skills\\skill-updater\\skill.meta.yaml", "categories": ["元技能"]}], "edges": [{"source": "find-skills", "target": "skill-creator", "type": "downstream", "label": "下游"}, {"source": "find-skills", "target": "skill-index", "type": "downstream", "label": "下游"}, {"source": "find-skills", "target": "skill-graph", "type": "downstream", "label": "下游"}, {"source": "force-graph-physics", "target": "skill-graph", "type": "downstream", "label": "下游"}, {"source": "pdf-extract", "target": "literature-paper-reading", "type": "upstream", "label": "上游"}, {"source": "literature-to-math", "target": "literature-paper-reading", "type": "should_run_after", "label": "后于"}, {"source": "math-method-lib", "target": "literature-to-math", "type": "upstream", "label": "上游"}, {"source": "pdf-extract", "target": "literature-to-math", "type": "upstream", "label": "上游"}, {"source": "literature-to-math", "target": "math-method-lib", "type": "downstream", "label": "下游"}, {"source": "math-method-lib", "target": "ml-research-coder", "type": "upstream", "label": "上游"}, {"source": "literature-paper-reading", "target": "ml-research-coder", "type": "upstream", "label": "上游"}, {"source": "ml-research-coder", "target": "ml-model-reconstructor", "type": "downstream", "label": "下游"}, {"source": "paper-note-to-ppt-template", "target": "pptx-layout-reverse", "type": "downstream", "label": "下游"}, {"source": "skill-creator", "target": "skill-graph", "type": "upstream", "label": "上游"}, {"source": "skill-graph", "target": "skill-index", "type": "downstream", "label": "下游"}, {"source": "skill-index", "target": "find-skills", "type": "coordinates", "label": "协调"}, {"source": "skill-index", "target": "skill-graph", "type": "coordinates", "label": "协调"}, {"source": "skill-index", "target": "skill-creator", "type": "coordinates", "label": "协调"}, {"source": "skill-creator", "target": "skill-index", "type": "upstream", "label": "上游"}, {"source": "skill-index", "target": "skill-lifecycle", "type": "upstream", "label": "上游"}, {"source": "skill-lifecycle", "target": "skill-graph", "type": "downstream", "label": "下游"}, {"source": "skill-updater", "target": "skill-index", "type": "coordinates", "label": "协调"}, {"source": "skill-updater", "target": "skill-graph", "type": "coordinates", "label": "协调"}, {"source": "skill-graph", "target": "skill-updater", "type": "should_run_after", "label": "后于"}], "warnings": ["`/find-skills` 的 `替代` 关系指向未知 skill：`find-local-skills`", "`/literature-paper-reading` 的 `上游` 关系指向未知 skill：`nature-academic-search`", "`/literature-paper-reading` 的 `下游` 关系指向未知 skill：`nature-writing`", "`/literature-paper-reading` 的 `下游` 关系指向未知 skill：`content-to-slides`", "`/literature-paper-reading` 的 `替代` 关系指向未知 skill：`nature-reader`", "`/skill-lifecycle` 的 `替代` 关系指向未知 skill：`skill-rm`", "`/skill-lifecycle` 的 `替代` 关系指向未知 skill：`skill-disable`"], "isolated": ["desktop-computer-automation", "docx", "markdown-to-html", "nature", "planning-with-files"], "categories": ["元技能", "文档与写作", "学术写作与出版", "MATLAB", "数学与方法库", "工具", "演示与文档"], "scopes": ["external", "personal"], "statuses": ["active"], "relationLabels": {"coordinates": "协调", "cooperates_with": "协同", "upstream": "上游", "downstream": "下游", "should_run_before": "先于", "should_run_after": "后于", "supersedes": "替代", "overlaps_with": "重叠"}}</script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -1199,7 +961,6 @@ function render() {
   if (selected && !nodes.some((n) => n.name === selected)) selected = null;
   if (isMobile()) {
     renderMobileCards(nodes);
-    renderGraph(nodes);
   } else {
     renderList(nodes);
     renderGraph(nodes);
@@ -1228,7 +989,6 @@ function startDrag(evt, nodeName, svg) {
   evt.currentTarget.style.cursor = "grabbing";
   svg.setPointerCapture(evt.pointerId);
   evt.stopPropagation();
-  evt.preventDefault();
 }
 
 // 以下绑定在 SVG 元素上，全局响应 pointermove/pointerup
@@ -1686,8 +1446,6 @@ function closeMobileDetail() {
 }
 
 function initMobile() {
-  if (window._mobileInitialized) return;
-  window._mobileInitialized = true;
   const tabs = document.querySelectorAll(".mobile-tab");
   const cards = $("mobileCards");
   const stats = $("mobileStats");
@@ -1697,11 +1455,11 @@ function initMobile() {
     tabs.forEach(b => b.classList.remove("active"));
     var btn = document.querySelector('.mobile-tab[data-tab="' + tab + '"]');
     if (btn) btn.classList.add("active");
+    var layout = document.querySelector('.layout');
+    if (layout) layout.style.display = (tab === 'graph') ? 'grid' : 'none';
     if (cards) cards.style.display = (tab === "cards") ? "block" : "none";
-    if (stats) stats.style.display = (tab === "filters") ? "block" : "none";
-    var layout = document.querySelector(".layout");
-    if (layout) layout.style.display = (tab === "graph") ? "grid" : "none";
     if (graphPanel) graphPanel.style.display = "none";
+    if (stats) stats.style.display = (tab === "filters") ? "block" : "none";
     if (tab === "filters") renderMobileStats();
     if (tab === "graph") renderGraph(visibleNodes());
   }
@@ -1715,7 +1473,6 @@ function initMobile() {
   $("mobileDetailOverlay").addEventListener("click", (e) => {
     if (e.target === $("mobileDetailOverlay")) closeMobileDetail();
   });
-  switchTab("cards");
 }
 
 function renderMobileGraph() {
@@ -1818,7 +1575,6 @@ svgElm.addEventListener("pointerdown", (evt) => {
     svgElm.style.cursor = "grabbing";
     svgElm.setPointerCapture(evt.pointerId);
     evt.stopPropagation();
-    evt.preventDefault();
   }
 });
 svgElm.addEventListener("pointermove", onSvgDrag);
