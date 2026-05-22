@@ -1,0 +1,1859 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Claude Code Skill 关系图</title>
+<style>
+:root {
+  --bg:#f6f7fb; --panel:#fff; --text:#1f2937; --muted:#6b7280;
+  --border:#e5e7eb; --accent:#2563eb; --accent-soft:#dbeafe;
+  --shadow:0 8px 24px rgba(15,23,42,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei","Noto Sans CJK SC",Arial,sans-serif;background:var(--bg);color:var(--text)}
+header{padding:22px 28px 14px}
+h1{margin:0 0 8px;font-size:26px}
+.sub{color:var(--muted);font-size:13px}
+.toolbar{display:grid;grid-template-columns:1.4fr repeat(3,minmax(140px,.5fr)) auto;gap:10px;padding:12px 28px 18px;align-items:center}
+input,select{border:1px solid var(--border);background:#fff;color:var(--text);border-radius:10px;padding:10px 12px;font-size:14px}
+.toggle{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer;white-space:nowrap}
+.toggle input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px;cursor:pointer}
+.layout{display:grid;grid-template-columns:300px 1fr 360px;gap:14px;padding:0 28px 28px;min-height:calc(100vh - 160px)}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
+.panel h2{font-size:15px;margin:0;padding:14px 16px;border-bottom:1px solid var(--border);background:#fafafa}
+.list{max-height:calc(100vh - 230px);overflow:auto}
+.item{padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer}
+.item:hover,.item.active{background:var(--accent-soft)}
+.item .name{font-weight:700;font-size:14px}
+.item .meta{color:var(--muted);font-size:12px;margin-top:4px}
+.graph-wrap{height:calc(100vh - 210px);min-height:540px;position:relative;user-select:none;-webkit-user-select:none;touch-action:none}
+.zoom-ctrl{position:absolute;bottom:12px;right:12px;display:flex;gap:6px;z-index:10}
+.zoom-ctrl button{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-size:13px;color:var(--text);cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.zoom-ctrl button:hover{background:var(--accent-soft)}
+svg{width:100%;height:100%;display:block;background:radial-gradient(ellipse at 50% 50%,#0d0d2a 0%,#050510 60%,#010108 100%);user-select:none;-webkit-user-select:none}
+.edge{stroke:#556688;stroke-width:0.8;stroke-opacity:0.5;marker-end:url(#arrow);fill:none}
+.legend{display:flex;gap:16px;justify-content:center;padding:8px 0 4px 0;font-size:13px}
+.edge.highlight{stroke:var(--accent);stroke-width:1.6;stroke-opacity:0.6}
+.node circle{stroke:rgba(255,255,255,.3);stroke-width:1.5;cursor:grab}
+.node.selected circle{stroke:#dc2626;stroke-width:4;stroke-dasharray:6 3}
+.node text{font-size:12px;font-weight:700;fill:#e8e8f8;text-anchor:middle;dominant-baseline:middle;pointer-events:none;text-shadow:0 0 4px rgba(0,0,0,.6)}
+.detail{padding:14px 16px 18px;overflow:auto;max-height:calc(100vh - 230px);font-size:13px}
+.badge{display:inline-block;padding:3px 8px;border-radius:999px;background:var(--accent-soft);color:#1d4ed8;font-size:12px;margin:3px 4px 3px 0}
+.badge.gray{background:#f3f4f6;color:#374151}
+.badge.green{background:#dcfce7;color:#166534}
+.badge.warn{background:#fef3c7;color:#92400e}
+.kv{margin:10px 0}
+.kv strong{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
+.kv code{background:#f3f4f6;padding:2px 5px;border-radius:6px}
+.table{width:100%;border-collapse:collapse;font-size:13px}
+.table th,.table td{border-bottom:1px solid var(--border);padding:8px 10px;text-align:left;vertical-align:top}
+.notice{margin:12px 0;padding:10px 12px;border-radius:10px;background:#fff7ed;color:#9a3412;font-size:13px}
+.footer-panels{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:0 28px 28px}
+.small{font-size:13px;color:var(--muted)}
+@keyframes breathe{0%,100%{opacity:.15}50%{opacity:.7}}
+.star{fill:#fff;animation:breathe var(--dur) ease-in-out infinite;animation-delay:var(--delay);pointer-events:none}
+.fullscreen header,.fullscreen .toolbar,.fullscreen .layout>aside,.fullscreen .footer-panels{display:none}
+.fullscreen .graph-wrap{height:100vh;min-height:100vh}
+.fullscreen .layout{grid-template-columns:1fr;padding:0}
+@media (max-width:1100px){
+  .layout{grid-template-columns:1fr}
+  .toolbar{grid-template-columns:1fr 1fr}
+  .graph-wrap{height:620px}
+  .footer-panels{grid-template-columns:1fr}
+}
+/* ============================================================
+   SKILL_GRAPH.html 移动端适配样式 — mobile-styles.css
+   屏幕宽度 ≤ 768px 时自动切换为卡片流 + 底部 Tab 栏
+   桌面端 (>768px) 保持力导向图，本文件不影响原有布局
+   ============================================================ */
+
+/* ---- 断点内才生效 ---- */
+@media (max-width: 768px) {
+
+  /* ---- 全局 ---- */
+  body {
+    padding-bottom: 72px;  /* 给底部 Tab 栏留空间 */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ---- Header 收缩 ---- */
+  header {
+    padding: 14px 16px 10px !important;
+  }
+  header h1 {
+    font-size: 20px !important;
+  }
+  header .sub {
+    font-size: 12px !important;
+    line-height: 1.5;
+  }
+
+  /* ---- 搜索栏固定在顶部 ---- */
+  .toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    padding: 8px 16px 10px !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+  .toolbar input {
+    grid-column: 1 / -1;
+    font-size: 16px !important;           /* 触摸优化：防 iOS 缩放 */
+    padding: 12px 14px !important;
+  }
+  .toolbar select {
+    font-size: 14px !important;
+    padding: 10px 8px !important;
+  }
+
+  /* ---- 隐藏桌面端面板（力导向图 / 侧栏列表 / 详情 / footer） ---- */
+  .layout,
+  .footer-panels {
+    display: none;
+  }
+
+  /* ---- 卡片流布局：从 skillList 面板复用数据 ---- */
+  /* 策略：用 JS 动态生成卡片是最佳方式，CSS 只定义卡片样式。
+     如果 HTML 中已存在 <section class="mobile-cards"> 则直接铺开 */
+  .mobile-cards,
+  .mobile-graph-panel {
+    display: block;
+    padding: 0 12px 16px;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+    transition: background 0.15s;
+  }
+  .card:active {
+    background: var(--accent-soft);
+  }
+
+  .card .card-name {
+    font-weight: 700;
+    font-size: 16px;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+
+  .card .card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+
+  .card .card-purpose {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.55;
+    margin-bottom: 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .card .card-relations {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .card .card-relations code {
+    background: #f3f4f6;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+
+  /* ---- 移动端统计面板 ---- */
+  .mobile-stats {
+    display: none;
+    padding: 12px 16px 20px;
+  }
+  .stat-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    display: inline-block;
+    width: calc(50% - 8px);
+    margin: 0 4px 10px;
+    box-shadow: 0 2px 6px rgba(15,23,42,0.04);
+  }
+  .stat-number {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+  .stat-label {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .mobile-stats h3 {
+    font-size: 14px;
+    margin: 8px 0 12px;
+  }
+
+  /* ---- 底部 Tab 栏 ---- */
+  .mobile-tabs {
+    display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -2px 12px rgba(15, 23, 42, 0.08);
+    height: 64px;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+
+  .mobile-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 500;
+    border: none;
+    background: none;
+    padding: 8px 4px;
+    transition: color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-tab.active {
+    color: var(--accent);
+  }
+
+  .mobile-tab .tab-icon {
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  /* ---- 详情弹出层（移动端从底部滑出） ---- */
+  .mobile-detail-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+  }
+  .mobile-detail-overlay.open {
+    display: block;
+  }
+
+  .mobile-detail-sheet {
+    position: fixed;
+    bottom: 64px;  /* Tab 栏上方 */
+    left: 0;
+    right: 0;
+    max-height: 60vh;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.12);
+    padding: 20px 16px 24px;
+    overflow-y: auto;
+    z-index: 301;
+    transform: translateY(100%);
+    transition: transform 0.25s ease;
+  }
+  .mobile-detail-sheet.open {
+    transform: translateY(0);
+  }
+
+  .mobile-detail-sheet .close-btn {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: #f3f4f6;
+    font-size: 18px;
+    line-height: 32px;
+    text-align: center;
+    cursor: pointer;
+    color: var(--muted);
+  }
+
+  /* ---- 触摸优化 ---- */
+  /* 最小触摸目标 44×44px (Apple HIG) */
+  button, select, .card, .mobile-tab {
+    min-height: 44px;
+  }
+
+  /* 禁用文本选择（卡片和按钮） */
+  .card, .mobile-tab, button {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* 滚动惯性和橡皮筋 */
+  .mobile-cards {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: auto;
+  }
+
+  /* ---- 空状态 ---- */
+  .mobile-empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 48px 16px;
+    font-size: 14px;
+  }
+
+}
+
+</style>
+
+</head>
+<body>
+<header>
+  <h1>Claude Code Skill 关系图</h1>
+  <div class="sub">
+    生成时间：<span id="generated"></span>　
+    根目录：<code id="root"></code>　
+    节点：<span id="nodeCount"></span>　
+    关系：<span id="edgeCount"></span>
+  </div>
+</header>
+
+<section class="toolbar">
+  <input id="search" placeholder="搜索 skill 名称、用途、分类……">
+  <select id="category"></select>
+  <select id="scope"></select>
+  <select id="status"></select>
+</section>
+
+<main class="layout">
+  <aside class="panel">
+    <h2>Skill 列表</h2>
+    <div id="skillList" class="list"></div>
+  </aside>
+
+  <section class="panel">
+    <h2>关系网络</h2>
+    <div class="graph-wrap">
+      <svg id="graph" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Skill 关系图"></svg>
+      <div class="zoom-ctrl">
+        <button id="fullscreenBtn" onclick="toggleFullscreen()">全屏</button>
+        <button id="zoomReset" onclick="resetZoom()" style="display:none">重置</button>
+      </div>
+    </div>
+    <div class="legend">
+      <label class="toggle"><input type="checkbox" id="showEnvelopes" checked> 领域</label>
+      <label class="toggle"><input type="checkbox" id="showClusters"> 簇心</label>
+    </div>
+  </section>
+
+  <aside class="panel">
+    <h2>节点详情</h2>
+    <div id="detail" class="detail">点击左侧列表或图中的节点查看详情。</div>
+  </aside>
+</main>
+<section id="mobileCards" class="mobile-cards"></section>
+<div id="mobileGraphPanel" class="mobile-graph-panel" style="display:none"></div>
+<nav class="mobile-tabs" style="display:none">
+  <button class="mobile-tab active" data-tab="cards"><span class="tab-icon">&#9776;</span>列表</button>
+  <button class="mobile-tab" data-tab="graph"><span class="tab-icon">&#9671;</span>关系图</button>
+  <button class="mobile-tab" data-tab="filters"><span class="tab-icon">&#9651;</span>统计</button>
+</nav>
+<div id="mobileDetailOverlay" class="mobile-detail-overlay" style="display:none">
+  <div id="mobileDetailSheet" class="mobile-detail-sheet" style="display:none">
+    <button id="mobileDetailClose" class="close-btn">&times;</button>
+    <div id="mobileDetailContent"></div>
+  </div>
+</div>
+<section id="mobileStats" class="mobile-stats" style="display:none">
+  <h3>统计摘要</h3>
+  <div class="stat-card"><div class="stat-number" id="statTotal">0</div><div class="stat-label">总节点</div></div>
+  <div class="stat-card"><div class="stat-number" id="statEdges">0</div><div class="stat-label">关系边</div></div>
+  <div class="stat-card"><div class="stat-number" id="statCategories">0</div><div class="stat-label">分类</div></div>
+  <div class="stat-card"><div class="stat-number" id="statIsolated">0</div><div class="stat-label">孤立节点</div></div>
+  <div id="statChart"></div>
+</section>
+
+<section class="footer-panels">
+  <section class="panel"><h2>警告</h2><div id="warnings" class="detail"></div></section>
+  <section class="panel"><h2>孤立节点</h2><div id="isolated" class="detail"></div></section>
+</section>
+
+<script id="skill-data" type="application/json">{"generated": "2026-05-22", "root": "C:\\Users\\81402\\.claude\\skills", "nodes": [{"name": "desktop-computer-automation", "title": "桌面自动化控制", "category": "工具", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-12", "purpose": "基于视觉的桌面自动化控制，通过 Midscene 使用自然语言指令操控桌面环境（macOS、Windows、Linux），完全依赖截图识别而非 DOM 或无障碍标签。", "relations": {"coordinates": [], "cooperates_with": [], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["Auto-generated metadata. Review category, purpose, and relationships."], "_dir": "C:\\Users\\81402\\.claude\\skills\\desktop-computer-automation", "_path": "C:\\Users\\81402\\.claude\\skills\\desktop-computer-automation\\skill.meta.yaml", "categories": ["工具"]}, {"name": "docx", "title": "DOCX 文档创建与编辑工具", "category": "文档与写作", "scope": "external", "status": "active", "version": "8.1.0", "updated": "2026-05-22", "purpose": "创建、编辑、标注、批注和验证 .docx 文件。对含公式、编号、标题、域、批注、修订、内容控件或复杂排版的现有文档默认采用保留样式的 OOXML 补丁方案，并始终在交付前进行渲染验证和结构审计。", "relations": {"coordinates": [], "cooperates_with": [], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["外部生态技能，含 26 个任务指南和 30+ 脚本。主要处理 OOXML 级别的 docx 操作。"], "_dir": "C:\\Users\\81402\\.claude\\skills\\docx", "_path": "C:\\Users\\81402\\.claude\\skills\\docx\\skill.meta.yaml", "categories": ["文档与写作"]}, {"name": "find-skills", "title": "查找技能", "category": "元技能", "scope": "personal", "status": "active", "version": "0.2.0", "updated": "2026-05-21", "purpose": "查找、推荐、发现和安装技能。本地优先——先在本地已安装技能中查找推荐，找不到再去开放技能生态搜索和安装。", "relations": {"coordinates": [], "cooperates_with": ["skill-creator", "skill-index"], "upstream": [], "downstream": ["skill-creator", "skill-index", "skill-graph"], "should_run_before": ["skill-creator", "skill-index"], "should_run_after": [], "supersedes": ["find-local-skills"], "overlaps_with": []}, "notes": ["合并了原 find-local-skills 的本地查找功能", "审计和索引生成移交 skill-index"], "_dir": "C:\\Users\\81402\\.claude\\skills\\find-skills", "_path": "C:\\Users\\81402\\.claude\\skills\\find-skills\\skill.meta.yaml", "categories": ["元技能"]}, {"name": "force-graph-physics", "title": "图模型可视化物理引擎", "category": "工具", "scope": "personal", "status": "active", "version": "0.2.0", "updated": "2026-05-15", "purpose": "构建或优化交互式 2D 力导向节点-边图可视化的权威参考。所有需要图可视化的 skill 必须委托给本 skill。", "relations": {"coordinates": [], "cooperates_with": ["skill-graph"], "upstream": [], "downstream": ["skill-graph"], "should_run_before": ["skill-graph"], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["工具型 skill，提供图可视化物理引擎的最佳实践和故障排查。skill-graph 的 generate_skill_graph_html.py 应遵循本 skill 的规则。", "所有需要构建图模型可视化的 skill 必须委托给本 skill。"], "_dir": "C:\\Users\\81402\\.claude\\skills\\force-graph-physics", "_path": "C:\\Users\\81402\\.claude\\skills\\force-graph-physics\\skill.meta.yaml", "categories": ["工具"]}, {"name": "literature-paper-reading", "title": "论文系统阅读", "category": "数学与方法库, 学术写作与出版", "scope": "personal", "status": "active", "version": "0.2.0", "updated": "2026-05-15", "purpose": "按 10 维度框架系统性阅读学术论文并产出结构化 Obsidian 笔记；支持中英文逐段对照全文阅读、图表裁剪嵌入、源锚点追溯。", "relations": {"coordinates": [], "cooperates_with": ["literature-to-math"], "upstream": ["pdf-extract"], "downstream": [], "should_run_before": [], "should_run_after": ["pdf-extract", "literature-to-math"], "supersedes": [], "overlaps_with": []}, "notes": ["协作链 A：pdf-extract → literature-paper-reading → literature-to-math → math-method-lib"], "_dir": "C:\\Users\\81402\\.claude\\skills\\literature-paper-reading", "_path": "C:\\Users\\81402\\.claude\\skills\\literature-paper-reading\\skill.meta.yaml", "categories": ["数学与方法库", "学术写作与出版"]}, {"name": "literature-to-math", "title": "文献数学方法提炼器", "category": "数学与方法库", "scope": "personal", "status": "active", "version": "0.2.0", "updated": "2026-05-15", "purpose": "从学术文献中提取数学方法，调用 /math-method-lib 结构化写入 Obsidian 知识库。默认 scan-only 模式（只扫描不写库），用户确认后进入 write-vault 模式。", "relations": {"coordinates": [], "cooperates_with": ["math-method-lib", "pdf-extract"], "upstream": ["math-method-lib", "pdf-extract"], "downstream": ["math-method-lib"], "should_run_before": [], "should_run_after": ["pdf-extract"], "supersedes": [], "overlaps_with": []}, "notes": ["v0.2.0 重构：双模式（scan-only / write-vault）、固定 method-context 格式、硬性去重规则、中断条件、批量确认表格。", "依赖 math-method-lib 完成 16 节模板生成。PDF 文本提取委托给 pdf-extract（三级策略：PyMuPDF → qpdf 解密 → OCR）。"], "_dir": "C:\\Users\\81402\\.claude\\skills\\literature-to-math", "_path": "C:\\Users\\81402\\.claude\\skills\\literature-to-math\\skill.meta.yaml", "categories": ["数学与方法库"]}, {"name": "markdown-to-html", "title": "Markdown 转 HTML 转换器", "category": "工具", "scope": "external", "status": "active", "version": "0.1.2", "updated": "2026-05-14", "purpose": "将 Markdown 转换为带内联 CSS 的精美 HTML，针对微信公众号等平台优化。支持代码高亮、LaTeX 数学公式、PlantUML、脚注、警告框、信息图表，以及可选的外部链接底部引用转换。", "relations": {"coordinates": [], "cooperates_with": [], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["自动生成的 metadata。建议手工检查 category、purpose 和 relations。"], "_dir": "C:\\Users\\81402\\.claude\\skills\\markdown-to-html", "_path": "C:\\Users\\81402\\.claude\\skills\\markdown-to-html\\skill.meta.yaml", "categories": ["工具"]}, {"name": "math-method-lib", "title": "数学方法库管理", "category": "数学与方法库", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-12", "purpose": "Add or edit entries in the mathematical methods library (数学方法库). Use when creating, expanding, or reviewing a mathematical method note that follows the 16-section Obsidian template.", "relations": {"coordinates": [], "cooperates_with": ["literature-to-math"], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["Auto-generated metadata. Review category, purpose, and relationships."], "_dir": "C:\\Users\\81402\\.claude\\skills\\math-method-lib", "_path": "C:\\Users\\81402\\.claude\\skills\\math-method-lib\\skill.meta.yaml", "categories": ["数学与方法库"]}, {"name": "ml-model-reconstructor", "title": "MATLAB 模型重建器", "category": "MATLAB, 数学与方法库", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-14", "purpose": "从 MATLAB 代码（.m 文件、代码片段、项目目录）中逆向重建底层数学模型、变量定义、推导过程和最终公式。针对信号处理和优化工作流优化，覆盖 DSP 流水线、滤波器、FFT/频谱分析、估计、最小二乘、凸/非线性优化等场景。", "relations": {"coordinates": [], "cooperates_with": [], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["Auto-generated metadata. Review category, purpose, and relationships.", "可与 literature-to-math 互补：后者从论文提取数学方法，本 skill 从代码重建数学模型。", "产出可对接 math-method-lib 入库。"], "_dir": "C:\\Users\\81402\\.claude\\skills\\ml-model-reconstructor", "_path": "C:\\Users\\81402\\.claude\\skills\\ml-model-reconstructor\\skill.meta.yaml", "categories": ["MATLAB", "数学与方法库"]}, {"name": "ml-research-coder", "title": "MATLAB 研究编码器", "category": "MATLAB, 数学与方法库", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-15", "purpose": "将本地 Markdown 方法笔记或文献笔记转化为 MATLAB 开发环境。触发条件：从数学推导、算法、数值方法、研究笔记或论文复现请求生成 MATLAB 实现。", "relations": {"coordinates": [], "cooperates_with": ["math-method-lib", "literature-to-math", "literature-paper-reading", "ml-model-reconstructor"], "upstream": ["math-method-lib", "literature-paper-reading"], "downstream": ["ml-model-reconstructor"], "should_run_before": [], "should_run_after": ["literature-paper-reading", "math-method-lib"], "supersedes": [], "overlaps_with": []}, "notes": ["从 方法库/ 和 文献笔记/ 目录读取 .md 笔记", "输出结构化的 MATLAB 项目（src/tests/examples/docs）", "分 Workflow A（方法实现）和 Workflow B（论文复现）", "路径约定委托给项目级 CLAUDE.md，不在本 skill 内硬编码"], "_dir": "C:\\Users\\81402\\.claude\\skills\\ml-research-coder", "_path": "C:\\Users\\81402\\.claude\\skills\\ml-research-coder\\skill.meta.yaml", "categories": ["MATLAB", "数学与方法库"]}, {"name": "nature", "title": "学术写作工作台", "category": "学术写作与出版", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-21", "purpose": "学术写作全流程工作台——润色、写作、图表、引用、数据声明、审稿回复、文献检索。调用后展示功能菜单。", "relations": {"coordinates": [], "cooperates_with": ["literature-paper-reading", "math-method-lib"], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["首次调用时展示功能菜单，让用户选择子任务"], "_dir": "C:\\Users\\81402\\.claude\\skills\\nature", "_path": "C:\\Users\\81402\\.claude\\skills\\nature\\skill.meta.yaml", "categories": ["学术写作与出版"]}, {"name": "paper-note-to-ppt-template", "title": "论文/笔记转PPT——PNG模板套装版", "category": "演示与文档", "scope": "personal", "status": "active", "version": "0.3.0", "updated": "2026-05-19", "source": "local", "purpose": "使用用户提供的 PNG 背景模板，按预设槽位叠加文字、公式（PNG）和图片，生成科研风格 PowerPoint。适用于组会汇报、journal club、课题汇报、开题/中期/答辩。", "relations": {"coordinates": [], "cooperates_with": ["pptx-layout-reverse"], "upstream": [], "downstream": ["pptx-layout-reverse"], "should_run_before": ["pptx-layout-reverse"], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["与 pptx-layout-reverse 构成闭环：生成 PPTX → 用户手动调整 → 逆向提取位置/字号 → 对比模板基准 → 更新模板参数", "通过 MML2OMML.xsl XSLT 管道支持 LaTeX→OMML 转换，但 python-pptx 不支持 OMML 渲染，当前公式默认走 PNG", "背景模板 80% 透明度叠加", "页型：title/agenda/section/one_column/two_column/three_column/image_text/closing"], "_dir": "C:\\Users\\81402\\.claude\\skills\\paper-note-to-ppt-template", "_path": "C:\\Users\\81402\\.claude\\skills\\paper-note-to-ppt-template\\skill.meta.yaml", "categories": ["演示与文档"]}, {"name": "pdf-extract", "title": "PDF 文本提取", "category": "工具", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-14", "purpose": "从 PDF 文件中提取纯文本，支持加密 PDF（qpdf 解密）与扫描版 OCR。三级策略：PyMuPDF 直接提取 → qpdf 解密 → tesseract OCR。供其他 skill 委托调用，禁止各 skill 自行实现 PDF 解析。", "relations": {"coordinates": [], "cooperates_with": ["literature-to-math", "literature-paper-reading"], "upstream": [], "downstream": ["literature-to-math", "literature-paper-reading"], "should_run_before": ["literature-paper-reading", "literature-to-math"], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["工具型 skill，通常由其他 skill 内部调用而非用户直接触发。disable-model-invocation: true。", "所有需要 PDF 文本的 skill 应通过本 skill 提取，不得自行实现 PyMuPDF / qpdf / OCR。", "依赖 _shared/load_config.py 读取 config.local.yaml 中的 tools.qpdf / tools.tesseract 路径。"], "_dir": "C:\\Users\\81402\\.claude\\skills\\pdf-extract", "_path": "C:\\Users\\81402\\.claude\\skills\\pdf-extract\\skill.meta.yaml", "categories": ["工具"]}, {"name": "planning-with-files", "title": "文件持久化工作计划", "category": "工具", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-19", "source": "local", "purpose": "以文件系统作为持久工作记忆，将复杂任务的计划（task_plan.md）、发现（findings.md）和进度（progress.md）写入磁盘，防止上下文窗口压缩或遗忘。适用于跨会话、长运行时间的编码、调试、研究、重构等任务。", "relations": {"coordinates": [], "cooperates_with": ["skill-creator"], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": ["默认输出目录为项目根 .ai-memory/", "适用于任何复杂 multi-step 任务，不只是 skill 开发"], "_dir": "C:\\Users\\81402\\.claude\\skills\\planning-with-files", "_path": "C:\\Users\\81402\\.claude\\skills\\planning-with-files\\skill.meta.yaml", "categories": ["工具"]}, {"name": "pptx-layout-reverse", "title": "PPTX→JSON 逆向还原", "category": "演示与文档", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-19", "source": "local", "purpose": "将 PowerPoint PPTX 逆向还原为 JSON 布局配置，提取文本框坐标、字体样式、slot 匹配、OMML 公式框、layout delta，用于更新模板参数。", "relations": {"coordinates": [], "cooperates_with": ["paper-note-to-ppt-template"], "upstream": ["paper-note-to-ppt-template"], "downstream": [], "should_run_before": [], "should_run_after": ["paper-note-to-ppt-template"], "supersedes": [], "overlaps_with": []}, "notes": ["与 paper-note-to-ppt-template 构成闭环：模板生成 PPTX → 用户手动调整 → 本技能逆向提取位置/字号 → 输出 delta 对比模板基准 → 回写更新 template_layouts_16x9.json 和 theme_tokens.json"], "_dir": "C:\\Users\\81402\\.claude\\skills\\pptx-layout-reverse", "_path": "C:\\Users\\81402\\.claude\\skills\\pptx-layout-reverse\\skill.meta.yaml", "categories": ["演示与文档"]}, {"name": "skill-creator", "title": "技能创建器", "category": "元技能", "scope": "personal", "status": "active", "version": "0.2.0", "updated": "2026-05-15", "purpose": "创建、改进、测试和从经验中蒸馏技能。支持 distill（从笔记/调试记录提炼）、create（从零创建并迭代测试）、improve（优化触发率）三种模式。", "relations": {"coordinates": [], "cooperates_with": [], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": [], "supersedes": [], "overlaps_with": []}, "notes": [], "_dir": "C:\\Users\\81402\\.claude\\skills\\skill-creator", "_path": "C:\\Users\\81402\\.claude\\skills\\skill-creator\\skill.meta.yaml", "categories": ["元技能"]}, {"name": "skill-graph", "title": "技能关系图", "category": "元技能", "scope": "personal", "status": "active", "version": "0.5.0", "updated": "2026-05-21", "purpose": "为本地 Claude Code skills 创建和维护 skill.meta.yaml，并生成中文版 HTML 关系图。", "relations": {"coordinates": [], "cooperates_with": ["skill-index", "find-skills", "skill-creator"], "upstream": ["skill-creator", "force-graph-physics"], "downstream": ["skill-index"], "should_run_before": [], "should_run_after": ["skill-creator"], "supersedes": [], "overlaps_with": []}, "notes": ["负责关系可视化和 metadata 健康检查。", "不负责最终路由和分类治理，相关决策交给 skill-index。", "图可视化物理引擎遵循 force-graph-physics 的规则。修改 generate_skill_graph_html.py 时必须参考该 skill。", "find-local-skills 已合并至 find-skills，本文件引用已更新。"], "_dir": "C:\\Users\\81402\\.claude\\skills\\skill-graph", "_path": "C:\\Users\\81402\\.claude\\skills\\skill-graph\\skill.meta.yaml", "categories": ["元技能"]}, {"name": "skill-index", "title": "技能索引", "category": "元技能", "scope": "personal", "status": "active", "version": "0.2.0", "updated": "2026-05-21", "purpose": "协调、分类、路由、审计和维护本地技能系统。维护 SKILLS_INDEX.md，解决技能冲突，决定新技能的分类和存放位置。", "relations": {"coordinates": ["find-skills", "skill-graph", "skill-creator"], "cooperates_with": ["skill-graph"], "upstream": ["skill-graph", "skill-creator"], "downstream": [], "should_run_before": [], "should_run_after": ["skill-creator"], "supersedes": [], "overlaps_with": []}, "notes": ["所有本地技能的分类、路由和冲突解决的总协调层", "维护 SKILLS_INDEX.md", "审计功能（原 find-local-skills）已并入本技能"], "_dir": "C:\\Users\\81402\\.claude\\skills\\skill-index", "_path": "C:\\Users\\81402\\.claude\\skills\\skill-index\\skill.meta.yaml", "categories": ["元技能"]}, {"name": "skill-lifecycle", "title": "技能生命周期管理", "category": "元技能", "scope": "personal", "status": "active", "version": "0.2.0", "updated": "2026-05-15", "purpose": "统一管理本地技能的删除、禁用、启用和中文化，共享定位→确认→执行→更新索引→重建图流程。", "relations": {"coordinates": [], "cooperates_with": ["skill-index", "skill-graph"], "upstream": ["skill-index"], "downstream": ["skill-graph"], "should_run_before": [], "should_run_after": ["skill-index"], "supersedes": [], "overlaps_with": []}, "notes": [], "_dir": "C:\\Users\\81402\\.claude\\skills\\skill-lifecycle", "_path": "C:\\Users\\81402\\.claude\\skills\\skill-lifecycle\\skill.meta.yaml", "categories": ["元技能"]}, {"name": "skill-updater", "title": "技能更新器", "category": "元技能", "scope": "personal", "status": "active", "version": "0.1.0", "updated": "2026-05-14", "purpose": "从 claude-skills GitHub 仓库一键检查并拉取最新技能更新，同步 CLAUDE.md 模板。", "relations": {"coordinates": ["skill-index", "skill-graph"], "cooperates_with": [], "upstream": [], "downstream": [], "should_run_before": [], "should_run_after": ["skill-graph"], "supersedes": [], "overlaps_with": []}, "notes": ["Runs git fetch + git pull only, never modifies or creates skills", "Rebuilds SKILL_GRAPH.html after skill updates"], "_dir": "C:\\Users\\81402\\.claude\\skills\\skill-updater", "_path": "C:\\Users\\81402\\.claude\\skills\\skill-updater\\skill.meta.yaml", "categories": ["元技能"]}], "edges": [{"source": "find-skills", "target": "skill-creator", "type": "downstream", "label": "下游"}, {"source": "find-skills", "target": "skill-index", "type": "downstream", "label": "下游"}, {"source": "find-skills", "target": "skill-graph", "type": "downstream", "label": "下游"}, {"source": "force-graph-physics", "target": "skill-graph", "type": "downstream", "label": "下游"}, {"source": "pdf-extract", "target": "literature-paper-reading", "type": "upstream", "label": "上游"}, {"source": "literature-to-math", "target": "literature-paper-reading", "type": "should_run_after", "label": "后于"}, {"source": "math-method-lib", "target": "literature-to-math", "type": "upstream", "label": "上游"}, {"source": "pdf-extract", "target": "literature-to-math", "type": "upstream", "label": "上游"}, {"source": "literature-to-math", "target": "math-method-lib", "type": "downstream", "label": "下游"}, {"source": "math-method-lib", "target": "ml-research-coder", "type": "upstream", "label": "上游"}, {"source": "literature-paper-reading", "target": "ml-research-coder", "type": "upstream", "label": "上游"}, {"source": "ml-research-coder", "target": "ml-model-reconstructor", "type": "downstream", "label": "下游"}, {"source": "paper-note-to-ppt-template", "target": "pptx-layout-reverse", "type": "downstream", "label": "下游"}, {"source": "skill-creator", "target": "skill-graph", "type": "upstream", "label": "上游"}, {"source": "skill-graph", "target": "skill-index", "type": "downstream", "label": "下游"}, {"source": "skill-index", "target": "find-skills", "type": "coordinates", "label": "协调"}, {"source": "skill-index", "target": "skill-graph", "type": "coordinates", "label": "协调"}, {"source": "skill-index", "target": "skill-creator", "type": "coordinates", "label": "协调"}, {"source": "skill-creator", "target": "skill-index", "type": "upstream", "label": "上游"}, {"source": "skill-index", "target": "skill-lifecycle", "type": "upstream", "label": "上游"}, {"source": "skill-lifecycle", "target": "skill-graph", "type": "downstream", "label": "下游"}, {"source": "skill-updater", "target": "skill-index", "type": "coordinates", "label": "协调"}, {"source": "skill-updater", "target": "skill-graph", "type": "coordinates", "label": "协调"}, {"source": "skill-graph", "target": "skill-updater", "type": "should_run_after", "label": "后于"}], "warnings": ["`/find-skills` 的 `替代` 关系指向未知 skill：`find-local-skills`"], "isolated": ["desktop-computer-automation", "docx", "markdown-to-html", "nature", "planning-with-files"], "categories": ["元技能", "文档与写作", "学术写作与出版", "MATLAB", "数学与方法库", "工具", "演示与文档"], "scopes": ["external", "personal"], "statuses": ["active"], "relationLabels": {"coordinates": "协调", "cooperates_with": "协同", "upstream": "上游", "downstream": "下游", "should_run_before": "先于", "should_run_after": "后于", "supersedes": "替代", "overlaps_with": "重叠"}}</script>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+// force-graph-physics/engine.js — 纯物理引擎，无 DOM 依赖
+// 改进版：加入节点间排斥/碰撞、O(1) 连边查询、稳定边弹簧、无副作用 force 计算。
+// 用法：
+//   const sim = ForceGraph.create({ nodes, edges, centerX, centerY, getCats });
+//   sim.tick(); const pos = sim.getPosition(id); sim.setDrag(id, x, y);
+//   sim.setDamping(perSecondFactor);  // 每秒速度保留率，默认 0.45
+const ForceGraph = (() => {
+  const EPS = 0.001;
+  const FIXED_DT = 1 / 60;
+
+  // 布局空间参数
+  const ZONE_RADIUS = 5;
+  const ZONE_DIST = 380;
+  const BOUNDARY_R = 620;
+  // 力参数。数值为像素坐标系下的经验值，适合 1600 × 1000 viewBox。
+  const MIN_NODE_DIST = 36;
+  const REPULSION_STRENGTH = 3200;
+  const REPULSION_CAP = 120;
+  const COLLISION_K = 3.2;
+  const SPRING_LENGTH = 80;
+  const SPRING_K = 0.04;
+  const SPRING_CAP = 25;
+  const TERRITORY_R = 55;       // 节点领域半径
+  const ZONE_PULL_K = 0.035;
+  const ZONE_WALL_K = 0.025;
+  const BOUNDARY_K = 0.050;
+  const MAX_SPEED = 780;
+
+  // 阻尼按秒定义，换算为每 tick 因子：K_per_tick = perSecond ^ (1/60)
+  let dampPerSec = 1.0;   // 无阻尼，靠轨道动力学回归
+  let K_DAMP = Math.pow(dampPerSec, FIXED_DT);
+
+  function clamp(x, lo, hi) { return Math.max(lo, Math.min(hi, x)); }
+  function hypot(x, y) { return Math.sqrt(x * x + y * y); }
+
+  function setDamping(perSec) {
+    // 允许外部传入极端值，但做一点保护，避免 NaN/负值把仿真弄坏。
+    dampPerSec = clamp(Number(perSec) || 0.45, 0.001, 0.995);
+    K_DAMP = Math.pow(dampPerSec, FIXED_DT);
+  }
+
+  function create(opts) {
+    const nodes = opts.nodes || [];
+    const edges = opts.edges || [];
+    const centerX = opts.centerX || 800;
+    const centerY = opts.centerY || 500;
+    const getCats = opts.getCats || (() => ['default']);
+    const initialPositions = opts.initialPositions || null;
+
+    // 预计算度数和连边集合：避免在 O(N²) 循环里反复 edges.some(...)
+    const degreeMap = new Map();
+    const linkSet = new Set();
+    nodes.forEach(n => degreeMap.set(n.name, 0));
+    edges.forEach(e => {
+      degreeMap.set(e.source, (degreeMap.get(e.source) || 0) + 1);
+      degreeMap.set(e.target, (degreeMap.get(e.target) || 0) + 1);
+      linkSet.add(`${e.source}|||${e.target}`);
+      linkSet.add(`${e.target}|||${e.source}`);
+    });
+    function getDegree(id) { return degreeMap.get(id) || 0; }
+    function isLinked(a, b) { return linkSet.has(`${a}|||${b}`); }
+
+    // 预计算分类桥接：若某节点同属多分类，这些分类间存在桥接
+    const catBridge = new Set();
+    const bridgeNodeSet = new Set();
+    nodes.forEach(n => {
+      const cats = getCats(n);
+      if (cats.length > 1) bridgeNodeSet.add(n.name);
+      for (let i = 0; i < cats.length; i++) {
+        for (let j = i + 1; j < cats.length; j++) {
+          catBridge.add(`${cats[i]}|||${cats[j]}`);
+          catBridge.add(`${cats[j]}|||${cats[i]}`);
+        }
+      }
+    });
+    function isBridgeNode(id) { return bridgeNodeSet.has(id); }
+
+    // 预计算各分类节点总数 + 桥接节点自适应权重
+    const catSizeMap = new Map();
+    nodes.forEach(n => {
+      getCats(n).forEach(cat => {
+        catSizeMap.set(cat, (catSizeMap.get(cat) || 0) + 1);
+      });
+    });
+    const avgCatSize = nodes.length / Math.max(1, catSizeMap.size);
+    const bridgeCatWeights = new Map(); // name → {cat: weight}
+    bridgeNodeSet.forEach(name => {
+      const node = nodes.find(n => n.name === name);
+      if (!node) return;
+      const wmap = {};
+      getCats(node).forEach(cat => {
+        wmap[cat] = avgCatSize / Math.max(1, catSizeMap.get(cat) || 1);
+      });
+      bridgeCatWeights.set(name, wmap);
+    });
+    function getBridgeWeight(bridgeName, sharedCats) {
+      const wmap = bridgeCatWeights.get(bridgeName);
+      if (!wmap) return 1.0;
+      let best = 1.0;
+      sharedCats.forEach(cat => {
+        if (wmap[cat] !== undefined && wmap[cat] > best) best = wmap[cat];
+      });
+      return best;
+    }
+
+    function isBridged(catsA, catsB) {
+      for (const ca of catsA) {
+        for (const cb of catsB) {
+          if (catBridge.has(`${ca}|||${cb}`)) return true;
+        }
+      }
+      return false;
+    }
+
+    const posMap = new Map();
+    const velMap = new Map();
+    const zoneCenters = new Map();
+    const zoneOrbits = new Map(); // cat → { R, θ, ω }
+    let frozenId = null;
+    let dragId = null;
+
+    function setupZones() {
+      const cats = [...new Set(nodes.flatMap(n => getCats(n)))];
+      const count = cats.length;
+      const CLUSTER_ω = 0.105;
+      // 每个分类的轨道半径按自身节点数缩放
+      const maxCatSize = Math.max(1, ...[...catSizeMap.values()]);
+      const catRadius = new Map(); // cat → R
+      cats.forEach(cat => {
+        const sizeFrac = (catSizeMap.get(cat) || 0) / maxCatSize;
+        catRadius.set(cat, ZONE_DIST * (0.35 + 0.65 * sizeFrac));
+      });
+      // 桥接分类共享轨道半径（加权平均），邻接排列角度
+      const parent = new Map();
+      cats.forEach(c => parent.set(c, c));
+      const find = (c) => {
+        if (parent.get(c) !== c) parent.set(c, find(parent.get(c)));
+        return parent.get(c);
+      };
+      catBridge.forEach(key => {
+        const [a, b] = key.split('|||');
+        const ra = find(a), rb = find(b);
+        if (ra !== rb) parent.set(ra, rb);
+      });
+      const groups = new Map(); // root → [cats]
+      cats.forEach(c => {
+        const root = find(c);
+        if (!groups.has(root)) groups.set(root, []);
+        groups.get(root).push(c);
+      });
+      // 每个桥接组内统一半径，各组按大小排序后均匀分布角度
+      const groupList = [...groups.values()];
+      groupList.sort((a, b) => b.length - a.length); // 大组先排
+      groupList.forEach((groupCats, gi) => {
+        const avgR = groupCats.reduce((s, c) => s + catRadius.get(c), 0) / groupCats.length;
+        const baseAngle = (2 * Math.PI * gi) / groupList.length - Math.PI / 2;
+        groupCats.forEach((cat, ci) => {
+          const offset = groupCats.length > 1
+            ? (ci - (groupCats.length - 1) / 2) * 0.25  // 组内角偏移 ±0.25 rad
+            : 0;
+          const a = baseAngle + offset;
+          zoneCenters.set(cat, {
+            x: centerX + Math.cos(a) * avgR,
+            y: centerY + Math.sin(a) * avgR,
+          });
+          zoneOrbits.set(cat, { R: avgR, θ: a, ω: CLUSTER_ω });
+        });
+      });
+    }
+
+    function zoneForNodeId(id) {
+      const node = nodes.find(n => n.name === id);
+      const cats = node ? getCats(node) : ['default'];
+      return zoneCenters.get(cats[0]) || {x: centerX, y: centerY};
+    }
+
+    function initLayout() {
+      setupZones();
+      nodes.forEach((n, i) => {
+        const old = initialPositions && initialPositions.get ? initialPositions.get(n.name) : null;
+        let pos;
+        if (old) {
+          pos = {x: old.x, y: old.y};
+          posMap.set(n.name, pos);
+        } else {
+          const zc = zoneForNodeId(n.name);
+          const r = Math.sqrt(Math.random()) * ZONE_RADIUS * 0.25;
+          const a = Math.random() * 2 * Math.PI;
+          pos = {
+            x: zc.x + Math.cos(a) * r,
+            y: zc.y + Math.sin(a) * r,
+          };
+          // 确定性微扰，避免节点完全重合
+          pos.x += Math.cos(i * 2.399963) * 3;
+          pos.y += Math.sin(i * 2.399963) * 3;
+          posMap.set(n.name, pos);
+        }
+        // 初始切向速度：与所属簇同角速度公转，力分解后切向速度守恒
+        const primCat = getCats(n)[0] || 'default';
+        const orbRef = zoneOrbits.get(primCat);
+        if (orbRef) {
+          const dx0 = pos.x - centerX;
+          const dy0 = pos.y - centerY;
+          const r0 = Math.sqrt(dx0 * dx0 + dy0 * dy0) + 1;
+          const vTan0 = orbRef.ω * r0;
+          velMap.set(n.name, {
+            vx: -dy0 / r0 * vTan0,
+            vy:  dx0 / r0 * vTan0,
+          });
+        } else {
+          velMap.set(n.name, {vx: 0, vy: 0});
+        }
+      });
+    }
+
+    function addForce(acc, id, ax, ay) {
+      const a = acc.get(id);
+      if (!a) return;
+      a.ax += ax;
+      a.ay += ay;
+    }
+
+    function computeForces() {
+      if (zoneCenters.size === 0) setupZones();
+      const acc = new Map();
+      const N = nodes.length;
+      nodes.forEach(n => acc.set(n.name, {ax: 0, ay: 0}));
+
+      // 单节点力：边界、分类分区、分类中心吸引。
+      for (let i = 0; i < N; i++) {
+        const a = nodes[i];
+        const pa = posMap.get(a.name);
+        if (!pa) continue;
+        const frozen = (a.name === frozenId || a.name === dragId);
+        if (frozen) continue;
+
+        // 画布软边界：超过半径后向中心拉回。
+        const bcx = centerX - pa.x;
+        const bcy = centerY - pa.y;
+        const bd = Math.sqrt(bcx * bcx + bcy * bcy) + EPS;
+        if (bd > BOUNDARY_R) {
+          const overshoot = bd - BOUNDARY_R;
+          const f = Math.min(160, BOUNDARY_K * overshoot * overshoot);
+          addForce(acc, a.name, (bcx / bd) * f, (bcy / bd) * f);
+        }
+
+        // 分区墙和中心引力：遍历所有所属分类，多分类节点受所有同类分区全引力
+        const myCatsGrav = getCats(a);
+        const deg = getDegree(a.name);
+        myCatsGrav.forEach(cat => {
+          const zc = zoneCenters.get(cat);
+          if (!zc) return;
+          const dzx = zc.x - pa.x;
+          const dzy = zc.y - pa.y;
+          const dz = hypot(dzx, dzy) + EPS;
+
+          // 分区墙：弱辅助，仅防贴边
+          const zoneOvershoot = dz - ZONE_RADIUS;
+          if (zoneOvershoot > 0) {
+            const f = Math.min(30, ZONE_WALL_K * zoneOvershoot * zoneOvershoot / ZONE_RADIUS);
+            addForce(acc, a.name, (dzx / dz) * f, (dzy / dz) * f);
+          }
+
+          // 分区中心吸引：平方律，远处强力拉回
+          const centerPull = ZONE_PULL_K * dz * dz / ZONE_RADIUS;
+          addForce(acc, a.name, (dzx / dz) * centerPull, (dzy / dz) * centerPull);
+          // 速度匹配：预判簇心移动，防追滞后
+          const orb = zoneOrbits.get(cat);
+          if (orb) {
+            const vcx = -orb.R * Math.sin(orb.θ) * orb.ω;
+            const vcy =  orb.R * Math.cos(orb.θ) * orb.ω;
+            const vn = velMap.get(a.name);
+            if (vn) {
+              addForce(acc, a.name, (vcx - vn.vx) * 0.2, (vcy - vn.vy) * 0.2);
+            }
+          }
+        });
+
+      }
+
+      // 双节点力：全局排斥、碰撞、边弹簧。
+      for (let i = 0; i < N; i++) {
+        const a = nodes[i];
+        const pa = posMap.get(a.name);
+        if (!pa) continue;
+        const frozenA = (a.name === frozenId || a.name === dragId);
+
+        for (let j = i + 1; j < N; j++) {
+          const b = nodes[j];
+          const pb = posMap.get(b.name);
+          if (!pb) continue;
+          const frozenB = (b.name === frozenId || b.name === dragId);
+
+          let dx = pa.x - pb.x;
+          let dy = pa.y - pb.y;
+          let d2 = dx * dx + dy * dy;
+          if (d2 < EPS) {
+            // 完全重合时给一个确定性方向，避免 NaN 和粘连。
+            const a0 = (i * 97 + j * 131) % 360 * Math.PI / 180;
+            dx = Math.cos(a0) * 0.01;
+            dy = Math.sin(a0) * 0.01;
+            d2 = dx * dx + dy * dy;
+          }
+          const d = Math.sqrt(d2);
+          const ux = dx / d;
+          const uy = dy / d;
+
+          // 分类关系：提前计算，供后续排斥和引力使用
+          const catsA = getCats(a);
+          const catsB = getCats(b);
+          const sharedCats = catsA.filter(c => catsB.includes(c));
+          const shareCat = sharedCats.length > 0;
+          const bridged = !shareCat && isBridged(catsA, catsB);
+
+          // 桥接节点排斥盾：小分类 → 更强屏蔽（repelShield 更小）
+          let repelShield = 1.0;
+          if (shareCat) {
+            const aBr = isBridgeNode(a.name), bBr = isBridgeNode(b.name);
+            if (aBr !== bBr) {
+              const brName = aBr ? a.name : b.name;
+              const w = getBridgeWeight(brName, sharedCats);
+              repelShield = clamp(1.0 / (1.0 + w), 0.2, 0.85);
+            } else if (aBr && bBr) {
+              repelShield = 0.5;
+            }
+          }
+
+          // 常规排斥：让图具备”力导图”的自然松散感。
+          const repel = Math.min(REPULSION_CAP * repelShield, REPULSION_STRENGTH * repelShield / Math.max(d2, 25));
+          if (!frozenA) addForce(acc, a.name, ux * repel, uy * repel);
+          if (!frozenB) addForce(acc, b.name, -ux * repel, -uy * repel);
+
+          // 短程碰撞：避免节点和标签挤成一团。
+          if (d < MIN_NODE_DIST) {
+            const push = (MIN_NODE_DIST - d) * COLLISION_K;
+            if (!frozenA) addForce(acc, a.name, ux * push, uy * push);
+            if (!frozenB) addForce(acc, b.name, -ux * push, -uy * push);
+          }
+
+          // 边弹簧：按分类关系分级
+          if (isLinked(a.name, b.name)) {
+            let scale = 0.06;                    // 无关分类（极弱，不破坏轨道）
+            if (shareCat) scale = 1.0;           // 同分类全量
+            else if (bridged) scale = 0.12;      // 桥接分类微弱（防轨道破坏）
+            const f = clamp(SPRING_K * (d - SPRING_LENGTH) * scale, -SPRING_CAP * scale, SPRING_CAP * scale);
+            if (!frozenA) addForce(acc, a.name, -ux * f, -uy * f);
+            if (!frozenB) addForce(acc, b.name, ux * f, uy * f);
+          }
+
+          // 异类节点对排斥 + 同类节点对吸引
+          if (!shareCat) {
+            if (bridged) {
+              // 桥接分类间弱排斥，无领域碰撞
+              const heteroR = Math.min(60, 1500 / Math.max(d2, 100));
+              if (!frozenA) addForce(acc, a.name, ux * heteroR, uy * heteroR);
+              if (!frozenB) addForce(acc, b.name, -ux * heteroR, -uy * heteroR);
+            } else {
+              // 无桥接分类间强排斥 + 领域硬球碰撞
+              const heteroR = Math.min(200, 5000 / Math.max(d2, 100));
+              if (!frozenA) addForce(acc, a.name, ux * heteroR, uy * heteroR);
+              if (!frozenB) addForce(acc, b.name, -ux * heteroR, -uy * heteroR);
+              if (d < TERRITORY_R * 2.5) {
+                const overlap = TERRITORY_R * 2.5 - d;
+                const push = overlap * 1.5;
+                if (!frozenA) addForce(acc, a.name, ux * push, uy * push);
+                if (!frozenB) addForce(acc, b.name, -ux * push, -uy * push);
+              }
+            }
+          } else {
+            // 同类节点吸引：领域不断开
+            const attract = Math.min(6, d * 0.012);
+            if (!frozenA) addForce(acc, a.name, -ux * attract, -uy * attract);
+            if (!frozenB) addForce(acc, b.name, ux * attract, uy * attract);
+
+            // 桥接枢纽引力：按共享分类的节点数反比自适应
+            const aBridge = isBridgeNode(a.name);
+            const bBridge = isBridgeNode(b.name);
+            if (aBridge && !bBridge) {
+              const w = getBridgeWeight(a.name, sharedCats);
+              const pivotPull = Math.min(20, d * 0.03) * w;
+              addForce(acc, b.name, ux * pivotPull, uy * pivotPull);
+            } else if (!aBridge && bBridge) {
+              const w = getBridgeWeight(b.name, sharedCats);
+              const pivotPull = Math.min(20, d * 0.03) * w;
+              addForce(acc, a.name, -ux * pivotPull, -uy * pivotPull);
+            }
+          }
+        }
+      }
+      return acc;
+    }
+
+    function clampVelocity(v) {
+      const speed = hypot(v.vx, v.vy);
+      if (speed > MAX_SPEED) {
+        v.vx = v.vx / speed * MAX_SPEED;
+        v.vy = v.vy / speed * MAX_SPEED;
+      }
+    }
+
+    function updateZoneCenters() {
+      // 分类质心公转：各分类质心绕画布中心做开普勒轨道运动
+      zoneOrbits.forEach((orb, cat) => {
+        orb.θ += orb.ω * FIXED_DT;
+        zoneCenters.set(cat, {
+          x: centerX + orb.R * Math.cos(orb.θ),
+          y: centerY + orb.R * Math.sin(orb.θ),
+        });
+      });
+    }
+
+    function tick() {
+      const active = nodes.filter(n => n.name !== dragId && n.name !== frozenId);
+
+      // Velocity Verlet：computeForces 无副作用，稳定性更好。
+      const acc0 = computeForces();
+      active.forEach(n => {
+        const v = velMap.get(n.name);
+        const a = acc0.get(n.name);
+        if (!v || !a) return;
+        v.vx += a.ax * FIXED_DT * 0.5;
+        v.vy += a.ay * FIXED_DT * 0.5;
+        clampVelocity(v);
+      });
+      active.forEach(n => {
+        const p = posMap.get(n.name);
+        const v = velMap.get(n.name);
+        if (!p || !v) return;
+        p.x += v.vx * FIXED_DT;
+        p.y += v.vy * FIXED_DT;
+      });
+      const acc1 = computeForces();
+      active.forEach(n => {
+        const v = velMap.get(n.name);
+        const a = acc1.get(n.name);
+        if (!v || !a) return;
+        v.vx += a.ax * FIXED_DT * 0.5;
+        v.vy += a.ay * FIXED_DT * 0.5;
+        // 速度分解（以簇心为参考，保证分区引力全量保留为径向）
+        const p = posMap.get(n.name);
+        if (p) {
+          const primCat = getCats(n)[0];
+          const zc = zoneCenters.get(primCat) || {x: centerX, y: centerY};
+          const dx = p.x - zc.x;  // 节点→簇心向量
+          const dy = p.y - zc.y;
+          const dz = Math.sqrt(dx * dx + dy * dy) + 1;
+          // 径向分量（指向/背离簇心）：阻尼衰减
+          const vRadial = (v.vx * dx + v.vy * dy) / dz;
+          const vRadialX = vRadial * dx / dz * K_DAMP;
+          const vRadialY = vRadial * dy / dz * K_DAMP;
+          // 切向分量（绕簇心）：保留
+          const vTan = (-dy / dz) * v.vx + (dx / dz) * v.vy;
+          const vTanX = -dy / dz * vTan;
+          const vTanY =  dx / dz * vTan;
+          v.vx = vTanX + vRadialX;
+          v.vy = vTanY + vRadialY;
+        }
+        clampVelocity(v);
+      });
+      updateZoneCenters();
+    }
+
+    function getPosition(id) { return posMap.get(id) || null; }
+    function getAllPositions() { return posMap; }
+    function hasEnergy() {
+      return [...velMap.values()].some(v => Math.abs(v.vx) > 0.6 || Math.abs(v.vy) > 0.6);
+    }
+
+    function setDrag(id, x, y) {
+      dragId = id;
+      posMap.set(id, {x, y});
+    }
+    function endDrag() { dragId = null; }
+    function setFrozen(id) { frozenId = id; }
+    function clearFrozen() { frozenId = null; }
+
+    function setVelocity(id, vx, vy) {
+      const v = {vx: Number(vx) || 0, vy: Number(vy) || 0};
+      clampVelocity(v);
+      velMap.set(id, v);
+    }
+    function getVelocity(id) { return velMap.get(id) || {vx: 0, vy: 0}; }
+    function getZoneCenters() { return zoneCenters; }
+    function getZoneRadius() { return ZONE_RADIUS; }
+    function getCenter() { return {x: centerX, y: centerY}; }
+
+    initLayout();
+
+    return {
+      tick, getPosition, getAllPositions, hasEnergy,
+      setDrag, endDrag, setFrozen, clearFrozen,
+      setDamping, setVelocity, getVelocity,
+      getZoneCenters, getZoneRadius, getCenter,
+    };
+  }
+
+  return { create, setDamping };
+})();
+
+const DATA = JSON.parse(document.getElementById("skill-data").textContent);
+
+// ---- global state ----
+let selected = null;
+let hovered = null;
+let posMap = new Map();
+let isDragging = false, dragArmed = false;
+let draggedNode = null, dragSvg = null;
+let offsetX = 0, offsetY = 0;
+let lastDragPos = null;
+let dragVel = {vx: 0, vy: 0};
+let vbX = -20, vbY = -20, vbW = 1640, vbH = 1040;
+let isPanning = false;
+let panStartX = 0, panStartY = 0;
+let panVbX = 0, panVbY = 0;
+let panelDirty = false;
+let currentSimKey = "";
+let showEnvelopes = true; // 领域圈开关
+let showClusters = false; // 簇心显示开关
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+const CAT_COLORS = {
+  元技能: "#88aaff", 数学与方法库: "#b388ff", 编码与调试: "#55cc77",
+  测试与质量: "#ff9944", 文档与写作: "#44ccdd", 学术写作与出版: "#44ccaa",
+  运维与发布: "#ff6666", 研究与发现: "#ffcc44", 设计与界面: "#ff77aa",
+  数据与分析: "#8888ff", 规划与评审: "#44cc88", MATLAB: "#ff9955",
+  未分类: "#aabbcc", 演示与文档: "#bb77ee", 工具: "#9999ff"
+};
+const CIRCLE_CX = 800, CIRCLE_CY = 500;
+let sim = null;
+function simKeyFor(nodes) {
+  return nodes.map(n => n.name).sort().join(",");
+}
+function initSim(nodesOverride = null) {
+  const nodes = nodesOverride || visibleNodes();
+  const visible = new Set(nodes.map(n => n.name));
+  const edges = DATA.edges.filter(e => visible.has(e.source) && visible.has(e.target));
+  const key = simKeyFor(nodes);
+  if (sim && currentSimKey === key) return;
+  const oldPos = posMap;
+  const filterCat = getFilters().category;
+  sim = ForceGraph.create({
+    nodes,
+    edges,
+    centerX: CIRCLE_CX,
+    centerY: CIRCLE_CY,
+    getCats: (node) => {
+      const cats = nodeCats(node);
+      if (filterCat && cats.includes(filterCat)) return [filterCat];
+      return cats;
+    },
+    initialPositions: oldPos,
+  });
+  currentSimKey = key;
+  posMap = sim.getAllPositions();
+}
+
+
+
+function svgEl(tag) { return document.createElementNS(SVG_NS, tag); }
+
+function nodeCats(n) { return n.categories || [n.category || "未分类"]; }
+
+function jaccard(a, b) { const ca = nodeCats(a); const cb = nodeCats(b); const inter = ca.filter(c => cb.includes(c)).length; return inter / (ca.length + cb.length - inter); }
+
+function visibleNodes() {
+  const f = getFilters();
+  return DATA.nodes.filter((n) => {
+    const hay = [n.name, n.title, ...nodeCats(n), n.scope, n.status, n.purpose].join(" ").toLowerCase();
+    if (f.q && !hay.includes(f.q)) return false;
+    if (f.category && !nodeCats(n).includes(f.category)) return false;
+    if (f.scope && n.scope !== f.scope) return false;
+    if (f.status && n.status !== f.status) return false;
+    return true;
+  });
+}
+
+function getFilters() {
+  return {
+    q: $("search").value.trim().toLowerCase(),
+    category: $("category").value,
+    scope: $("scope").value,
+    status: $("status").value,
+  };
+}
+
+function getMagnified() {
+  const active = selected || hovered;
+  const set = new Set();
+  if (!active) return set;
+  set.add(active);
+  const selNode = DATA.nodes.find(n => n.name === active);
+  const selCats = selNode ? nodeCats(selNode) : [];
+  DATA.edges.forEach(e => {
+    if (e.source === active) set.add(e.target);
+    if (e.target === active) set.add(e.source);
+  });
+  // 同分类节点也算关联
+  DATA.nodes.forEach(n => {
+    if (set.has(n.name)) return;
+    if (nodeCats(n).some(c => selCats.includes(c))) set.add(n.name);
+  });
+  return set;
+}
+
+function renderList(nodes) {
+  const box = $("skillList");
+  box.innerHTML = "";
+  nodes.forEach((n) => {
+    const div = document.createElement("div");
+    div.className = "item" + (selected === n.name ? " active" : "");
+    div.innerHTML =
+      '<div class="name">/' + escapeHtml(n.name) + '</div>' +
+      '<div class="meta">' + escapeHtml(nodeCats(n).join(", ")) + ' · ' +
+      escapeHtml(n.scope || "unknown") + ' · ' + escapeHtml(n.status || "") + '</div>' +
+      '<div class="meta">' + escapeHtml(truncate(n.purpose || "", 74)) + '</div>';
+    div.onclick = () => { selected = n.name; panelDirty = true; };
+    box.appendChild(div);
+  });
+}
+
+function renderDetail() {
+  const node = DATA.nodes.find((n) => n.name === selected);
+  if (!node) {
+    $("detail").innerHTML = "点击左侧列表或图中的节点查看详情。";
+    return;
+  }
+  const notes = (node.notes && node.notes.length)
+    ? '<ul>' + node.notes.map((x) => '<li>' + escapeHtml(x) + '</li>').join("") + '</ul>'
+    : '<div class="small">无备注。</div>';
+  $("detail").innerHTML =
+    '<h3>/' + escapeHtml(node.name) + '</h3>' +
+    '<div>' +
+      '<span class="badge">' + escapeHtml(nodeCats(node).join(", ")) + '</span>' +
+      '<span class="badge gray">' + escapeHtml(node.scope || "unknown") + '</span>' +
+      '<span class="badge green">' + escapeHtml(node.status || "unknown") + '</span>' +
+      '<span class="badge gray">v' + escapeHtml(node.version || "") + '</span>' +
+    '</div>' +
+    '<div class="kv"><strong>标题</strong>' + escapeHtml(node.title || "") + '</div>' +
+    '<div class="kv"><strong>用途</strong>' + escapeHtml(node.purpose || "") + '</div>' +
+    '<div class="kv"><strong>更新时间</strong>' + escapeHtml(node.updated || "") + '</div>' +
+    '<div class="kv"><strong>路径</strong><code>' + escapeHtml(node._dir || "") + '</code></div>' +
+    '<div class="kv"><strong>Metadata</strong><code>' + escapeHtml(node._path || "") + '</code></div>' +
+    '<div class="kv"><strong>关系</strong>' + relationRows(node) + '</div>' +
+    '<div class="kv"><strong>备注</strong>' + notes + '</div>';
+}
+
+function relationRows(n) {
+  const rel = n.relations || {};
+  const rows = [];
+  Object.entries(DATA.relationLabels).forEach(([key, label]) => {
+    const arr = rel[key] || [];
+    if (arr.length) {
+      rows.push('<tr><td>' + escapeHtml(label) + '</td><td>' +
+        arr.map((x) => '<code>/' + escapeHtml(x) + '</code>').join(' ') +
+        '</td></tr>');
+    }
+  });
+  if (!rows.length) return '<div class="small">暂无显式关系。</div>';
+  return '<table class="table"><tbody>' + rows.join("") + '</tbody></table>';
+}
+
+function renderWarnings() {
+  const box = $("warnings");
+  if (!DATA.warnings.length) {
+    box.innerHTML = '<span class="badge green">没有发现关系警告</span>'; return;
+  }
+  box.innerHTML = DATA.warnings.map((w) => '<div class="notice">' + escapeHtml(w) + '</div>').join("");
+}
+
+function renderIsolated() {
+  const box = $("isolated");
+  if (!DATA.isolated.length) {
+    box.innerHTML = '<span class="badge green">没有孤立节点</span>'; return;
+  }
+  box.innerHTML = DATA.isolated.map((n) => '<span class="badge warn">/' + escapeHtml(n) + '</span>').join("");
+}
+
+const TERRITORY_R = 55;
+
+function drawTerritories(svg, nodes) {
+  svg.querySelectorAll('.envelope').forEach(el => el.remove());
+  const magnified = getMagnified();
+  const hasSelection = magnified.size > 0;
+  const filterCat = getFilters().category;
+  const groups = new Map(); // cat -> { color, circles: [{x,y}], related: bool }
+  nodes.forEach(n => {
+    const p = posMap.get(n.name);
+    if (!p) return;
+    const cats = nodeCats(n);
+    const primaryCat = filterCat && cats.includes(filterCat) ? filterCat : (cats[0] || "未分类");
+    const primaryColor = catColor(primaryCat);
+    const targets = [primaryCat];
+    targets.forEach(cat => {
+      if (!groups.has(cat)) groups.set(cat, { color: catColor(cat), circles: [], related: false });
+      groups.get(cat).circles.push({ x: p.x, y: p.y, fill: primaryColor });
+      if (magnified.has(n.name)) groups.get(cat).related = true;
+    });
+  });
+  groups.forEach((data, cat) => {
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute("class", "envelope");
+    g.setAttribute("filter", "url(#territory-blob)");
+    const dimmed = hasSelection && !data.related;
+    data.circles.forEach(pos => {
+      const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      c.setAttribute("cx", pos.x);
+      c.setAttribute("cy", pos.y);
+      c.setAttribute("r", TERRITORY_R);
+      c.setAttribute("fill", pos.fill);
+      c.setAttribute("fill-opacity", dimmed ? "0.3" : "1");
+      c.setAttribute("stroke", "none");
+      c.setAttribute("pointer-events", "none");
+      g.appendChild(c);
+    });
+    if (dimmed) g.setAttribute("opacity", "0.35");
+    svg.insertBefore(g, svg.firstChild);
+    // 聚类中心分类名称
+    const cx = data.circles.reduce((s, p) => s + p.x, 0) / data.circles.length;
+    const cy = data.circles.reduce((s, p) => s + p.y, 0) / data.circles.length;
+    const fontSize = Math.max(13, Math.min(Math.round(TERRITORY_R / 3.5), 22));
+    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    label.setAttribute("class", "envelope");
+    label.setAttribute("x", cx);
+    label.setAttribute("y", cy);
+    label.setAttribute("text-anchor", "middle");
+    label.setAttribute("dominant-baseline", "central");
+    label.setAttribute("fill", data.color);
+    label.setAttribute("fill-opacity", dimmed ? "0.15" : "0.75");
+    label.setAttribute("font-size", fontSize);
+    label.setAttribute("font-weight", "700");
+    label.setAttribute("pointer-events", "none");
+    label.textContent = cat;
+    svg.appendChild(label);
+  });
+}
+
+function drawClusterCenters(svg) {
+  svg.querySelectorAll('.cluster-center').forEach(el => el.remove());
+  if (!sim) return;
+  const centers = sim.getZoneCenters();
+  if (!centers) return;
+  const seen = new Set();
+  centers.forEach((pos, cat) => {
+    const key = `${Math.round(pos.x)},${Math.round(pos.y)}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    const names = [];
+    centers.forEach((p, c) => {
+      if (Math.abs(p.x - pos.x) < 2 && Math.abs(p.y - pos.y) < 2) names.push(c);
+    });
+    const g = svgEl('g'); g.setAttribute('class', 'cluster-center');
+    const c = svgEl('circle');
+    c.setAttribute('cx', pos.x); c.setAttribute('cy', pos.y);
+    c.setAttribute('r', '9'); c.setAttribute('fill', 'none');
+    c.setAttribute('stroke', 'rgba(255,180,100,0.9)'); c.setAttribute('stroke-width', '2');
+    c.setAttribute('stroke-dasharray', '5 3');
+    g.appendChild(c);
+    const t = svgEl('text');
+    t.setAttribute('x', pos.x + 13); t.setAttribute('y', pos.y + 4);
+    t.setAttribute('fill', '#ffcc88'); t.setAttribute('font-size', '11');
+    t.setAttribute('font-weight', '700');
+    t.textContent = names.join('·');
+    g.appendChild(t);
+    svg.appendChild(g);
+  });
+}
+
+function escapeHtml(s) {
+  return String(s ?? "")
+    .replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+}
+
+function truncate(s, n) {
+  s = String(s ?? "");
+  return s.length > n ? s.slice(0, n - 1) + "…" : s;
+}
+
+function catColor(cat) { return CAT_COLORS[cat] || "#94a3b8"; }
+
+function optionList(select, label, values) {
+  select.innerHTML = "";
+  const all = document.createElement("option");
+  all.value = ""; all.textContent = label;
+  select.appendChild(all);
+  values.forEach((v) => {
+    const o = document.createElement("option");
+    o.value = v; o.textContent = v;
+    select.appendChild(o);
+  });
+}
+
+function render() {
+  const nodes = visibleNodes();
+  if (selected && !nodes.some((n) => n.name === selected)) selected = null;
+  if (isMobile()) {
+    renderMobileCards(nodes);
+    renderGraph(nodes);
+  } else {
+    renderList(nodes);
+    renderGraph(nodes);
+    renderDetail();
+    renderWarnings();
+    renderIsolated();
+  }
+}
+
+function startDrag(evt, nodeName, svg) {
+  if (!sim) initSim(visibleNodes());
+  isDragging = true;
+  draggedNode = nodeName;
+  dragSvg = svg;
+  dragVel = {vx: 0, vy: 0};
+  sim.setFrozen(nodeName);
+  // 拖拽时保持较高速度保留率，让邻居节点能自然响应，不要“粘住”。
+  sim.setDamping(1.0);
+  const p = posMap.get(nodeName);
+  const pt = svg.createSVGPoint();
+  pt.x = evt.clientX; pt.y = evt.clientY;
+  const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
+  offsetX = svgP.x - p.x;
+  offsetY = svgP.y - p.y;
+  lastDragPos = {x: p.x, y: p.y, t: performance.now()};
+  evt.currentTarget.style.cursor = "grabbing";
+  svg.setPointerCapture(evt.pointerId);
+  evt.stopPropagation();
+  evt.preventDefault();
+}
+
+// 以下绑定在 SVG 元素上，全局响应 pointermove/pointerup
+function onSvgDrag(evt) {
+  if (isPanning) {
+    evt.preventDefault();
+    const dx = (evt.clientX - panStartX) * vbW / dragSvg.clientWidth;
+    const dy = (evt.clientY - panStartY) * vbH / dragSvg.clientHeight;
+    vbX = panVbX - dx;
+    vbY = panVbY - dy;
+    updateViewBox();
+    return;
+  }
+  if (!isDragging || !draggedNode) return;
+  evt.preventDefault();
+  const svg = dragSvg;
+  const pt = svg.createSVGPoint();
+  pt.x = evt.clientX; pt.y = evt.clientY;
+  const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
+  const nx = svgP.x - offsetX, ny = svgP.y - offsetY;
+
+  const now = performance.now();
+  if (lastDragPos) {
+    const dt = Math.max(0.016, (now - lastDragPos.t) / 1000);
+    dragVel.vx = (nx - lastDragPos.x) / dt;
+    dragVel.vy = (ny - lastDragPos.y) / dt;
+  }
+  lastDragPos = {x: nx, y: ny, t: now};
+
+  sim.setDrag(draggedNode, nx, ny);
+  posMap.set(draggedNode, {x: nx, y: ny});
+  dragPushNeighbors(nx, ny);
+}
+
+// 拖拽期间的轻量碰撞：仅推开与被拖节点重叠的节点
+const DRAG_MIN_DIST = 38;
+function dragPushNeighbors(dx, dy) {
+  const nodes = visibleNodes();
+  for (const n of nodes) {
+    if (n.name === draggedNode) continue;
+    const p = posMap.get(n.name);
+    if (!p) continue;
+    const ddx = dx - p.x, ddy = dy - p.y;
+    const d = Math.sqrt(ddx * ddx + ddy * ddy) + 0.001;
+    if (d < DRAG_MIN_DIST) {
+      const overlap = DRAG_MIN_DIST - d;
+      const svgW = 1600, svgH = 1000;
+      p.x -= (ddx / d) * overlap;
+      p.y -= (ddy / d) * overlap;
+      p.x = Math.max(80, Math.min(svgW - 80, p.x));
+      p.y = Math.max(80, Math.min(svgH - 80, p.y));
+    }
+  }
+}
+
+function onSvgDragEnd(evt) {
+  if (isPanning) {
+    isPanning = false;
+    dragSvg.releasePointerCapture(evt.pointerId);
+    dragSvg.style.cursor = "grab";
+    dragSvg = null;
+    return;
+  }
+  if (!isDragging) return;
+  if (dragSvg && draggedNode) {
+    dragSvg.releasePointerCapture(evt.pointerId);
+    const g = dragSvg.querySelector('[data-name="' + draggedNode + '"]');
+    if (g) g.style.cursor = "grab";
+  }
+  // 使用 pointermove 中持续计算的速度，释放后会有自然惯性。
+  if (draggedNode) {
+    sim.setVelocity(
+      draggedNode,
+      Math.max(-900, Math.min(900, dragVel.vx)),
+      Math.max(-900, Math.min(900, dragVel.vy))
+    );
+  }
+  sim.endDrag();
+  sim.clearFrozen();
+  sim.setDamping(1.0);
+  isDragging = false;
+  lastDragPos = null;
+  dragVel = {vx: 0, vy: 0};
+  draggedNode = null;
+  dragSvg = null;
+  panelDirty = true;
+}
+
+// 持续物理循环：固定时间步长 + 真正的累积器，保证物理一致性
+let lastPhysTime = 0;
+let physAcc = 0;
+let frameSkip = false;
+function physicsTick(now) {
+  requestAnimationFrame(physicsTick);
+  const nodes = visibleNodes();
+  if (!nodes.length) return;
+
+  initSim(nodes);
+
+  const FIXED_DT = 1 / 60;
+  if (!lastPhysTime) {
+    lastPhysTime = now;
+    return;
+  }
+  physAcc += Math.min((now - lastPhysTime) / 1000, 0.1);
+  lastPhysTime = now;
+
+  let physRan = false;
+  let steps = 0;
+  while (physAcc >= FIXED_DT && steps < 6) {
+    physAcc -= FIXED_DT;
+    physRan = true;
+    steps += 1;
+    sim.tick();
+  }
+  // 页面被挂起太久后丢弃过量积压，避免恢复时连续爆算。
+  if (steps >= 6) physAcc = 0;
+
+  if (!physRan) return;
+  posMap = sim.getAllPositions();
+
+  frameSkip = !frameSkip;
+  if (sim.hasEnergy() || !frameSkip || isDragging) {
+    renderGraph(nodes);
+    if (panelDirty) {
+      panelDirty = false;
+      renderList(nodes);
+      renderDetail();
+    }
+  }
+}
+
+let svgCache = null;  // { edgeLines: Map, nodeGroups: Map, nodeCircles: Map, lastKey: "" }
+
+function updateViewBox() {
+  const svg = $("graph");
+  svg.setAttribute("viewBox", `${vbX} ${vbY} ${vbW} ${vbH}`);
+  const btn = $("zoomReset");
+  const isDefault = Math.abs(vbW - 1640) < 10 && Math.abs(vbH - 1040) < 10;
+  btn.style.display = isDefault ? "none" : "block";
+}
+function resetZoom() { vbX = -20; vbY = -20; vbW = 1640; vbH = 1040; updateViewBox(); }
+let isFullscreen = false;
+function toggleFullscreen() {
+  isFullscreen = !isFullscreen;
+  document.body.classList.toggle("fullscreen", isFullscreen);
+  $("fullscreenBtn").textContent = isFullscreen ? "退出" : "全屏";
+  if (isFullscreen) fitToContent();
+}
+function fitToContent() {
+  const nodes = visibleNodes();
+  if (!nodes.length) { resetZoom(); return; }
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  nodes.forEach(n => {
+    const p = posMap.get(n.name);
+    if (!p) return;
+    minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+    minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+  });
+  const pad = 80;
+  vbX = minX - pad; vbY = minY - pad;
+  vbW = Math.max(400, maxX - minX + pad * 2);
+  vbH = Math.max(300, maxY - minY + pad * 2);
+  updateViewBox();
+}
+
+function renderGraph(nodes) {
+  const svg = $("graph");
+  svg.setAttribute("viewBox", `${vbX} ${vbY} ${vbW} ${vbH}`);
+  svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+
+  if (!nodes.length) {
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    svgCache = null;
+    const t = svgEl("text");
+    t.setAttribute("x", 600); t.setAttribute("y", 400);
+    t.setAttribute("text-anchor", "middle"); t.setAttribute("fill", "#94a3b8");
+    t.textContent = "没有匹配的 skill。";
+    svg.appendChild(t);
+    return;
+  }
+
+  const visible = new Set(nodes.map((n) => n.name));
+  const edges = DATA.edges.filter((e) => visible.has(e.source) && visible.has(e.target));
+  const key = nodes.map(n => n.name).sort().join(",");
+
+  // 初始化或按当前过滤结果重建仿真。过滤后不再受不可见节点影响。
+  initSim(nodes);
+  posMap = sim.getAllPositions();
+
+  // 节点集变了 → 全量重建；否则只更新位置
+  if (!svgCache || svgCache.lastKey !== key) {
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    svgCache = { edgeLines: new Map(), nodeGroups: new Map(), nodeCircles: new Map(), lastKey: key };
+
+    const defs = svgEl("defs");
+    const marker = svgEl("marker");
+    marker.setAttribute("id", "arrow");
+    marker.setAttribute("markerWidth", "6"); marker.setAttribute("markerHeight", "6");
+    marker.setAttribute("refX", "5"); marker.setAttribute("refY", "3");
+    marker.setAttribute("orient", "auto"); marker.setAttribute("markerUnits", "strokeWidth");
+    const ap = svgEl("path");
+    ap.setAttribute("d", "M0,0 L0,6 L9,3 z"); ap.setAttribute("fill", "#667799");
+    marker.appendChild(ap); defs.appendChild(marker);
+    const blob = svgEl("filter");
+    blob.setAttribute("id", "territory-blob");
+    blob.setAttribute("x", "-80%"); blob.setAttribute("y", "-80%");
+    blob.setAttribute("width", "260%"); blob.setAttribute("height", "260%");
+    blob.innerHTML =
+      '<feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur"/>' +
+      '<feComponentTransfer in="blur" result="threshold">' +
+        '<feFuncA type="table" tableValues="0 0.02 0.06 0.08 0.08"/>' +
+      '</feComponentTransfer>' +
+      '<feGaussianBlur in="threshold" stdDeviation="1.0" result="soft"/>' +
+      '<feDropShadow in="soft" dx="0" dy="0" stdDeviation="2" flood-color="#000" flood-opacity="0.12"/>';
+    defs.appendChild(blob);
+    const sunGrad = svgEl("radialGradient");
+    sunGrad.setAttribute("id", "sunGlow");
+    sunGrad.innerHTML =
+      '<stop offset="0%" stop-color="rgba(255,240,200,.85)"/>' +
+      '<stop offset="15%" stop-color="rgba(255,200,100,.4)"/>' +
+      '<stop offset="40%" stop-color="rgba(255,140,40,.08)"/>' +
+      '<stop offset="100%" stop-color="rgba(255,100,20,0)"/>';
+    defs.appendChild(sunGrad);
+    svg.appendChild(defs);
+    // 中心太阳
+    const sun = svgEl("circle");
+    sun.setAttribute("class", "sun");
+    sun.setAttribute("cx", CIRCLE_CX); sun.setAttribute("cy", CIRCLE_CY);
+    sun.setAttribute("r", "35"); sun.setAttribute("fill", "url(#sunGlow)");
+    sun.setAttribute("pointer-events", "none");
+    svg.appendChild(sun);
+    // 呼吸星空
+    for (let si = 0; si < 70; si++) {
+      const star = svgEl("circle");
+      star.setAttribute("class", "star");
+      star.setAttribute("cx", 60 + Math.random() * 1480);
+      star.setAttribute("cy", 60 + Math.random() * 880);
+      star.setAttribute("r", 0.4 + Math.random() * 1.2);
+      star.style.setProperty("--dur", (2 + Math.random() * 4) + "s");
+      star.style.setProperty("--delay", Math.random() * 5 + "s");
+      svg.appendChild(star);
+    }
+
+    edges.forEach((e) => {
+      const ek = e.source + "|||" + e.target;
+      const line = svgEl("line"); line.setAttribute("class", "edge");
+      svg.appendChild(line);
+      svgCache.edgeLines.set(ek, line);
+    });
+
+    nodes.forEach((n) => {
+      const g = svgEl("g"); g.setAttribute("data-name", n.name);
+      g.style.cursor = "grab";
+      g.addEventListener("pointerdown", (evt) => {
+        selected = n.name; panelDirty = true;
+        startDrag(evt, n.name, svg);
+      });
+      g.addEventListener("click", (evt) => {
+        if (!isDragging) { selected = n.name; panelDirty = true; }
+      });
+      g.addEventListener("mouseenter", () => { hovered = n.name; });
+      g.addEventListener("mouseleave", () => { hovered = null; });
+      const c = svgEl("circle");
+      c.setAttribute("r", nodeCats(n).includes("元技能") ? "6" : "5");
+      c.setAttribute("fill", catColor(nodeCats(n)[0] || "未分类"));
+      g.appendChild(c);
+      const t = svgEl("text");
+      const label = n.title || ("/" + n.name);
+      t.textContent = label.length > 8 ? label.slice(0, 7) + "…" : label;
+      g.appendChild(t);
+      const ti = svgEl("title");
+      ti.textContent = (n.title || "") + "\n/" + n.name + "\n" + (n.purpose || "");
+      g.appendChild(ti);
+      svg.appendChild(g);
+      svgCache.nodeGroups.set(n.name, g);
+      svgCache.nodeCircles.set(n.name, c);
+    });
+  }
+
+  // 更新边位置
+  const activeNode = hovered || selected;
+  svgCache.edgeLines.forEach((line, ek) => {
+    const [src, tgt] = ek.split("|||");
+    const a = posMap.get(src), b = posMap.get(tgt);
+    if (!a || !b) { line.setAttribute("visibility", "hidden"); return; }
+    if (!activeNode) { line.setAttribute("visibility", "hidden"); return; }
+    const edgeRelated = (src === activeNode || tgt === activeNode);
+    line.setAttribute("visibility", edgeRelated ? "visible" : "hidden");
+    line.setAttribute("opacity", "1");
+    const edx = b.x - a.x, edy = b.y - a.y;
+    const edist = Math.sqrt(edx * edx + edy * edy) || 1;
+    const sNode = nodes.find(n => n.name === src);
+    const tNode = nodes.find(n => n.name === tgt);
+    const sR = (sNode && nodeCats(sNode).includes("元技能") ? 6 : 5) + 1;
+    const tR = (tNode && nodeCats(tNode).includes("元技能") ? 6 : 5) + 2;
+    line.setAttribute("x1", a.x + (edx / edist) * sR);
+    line.setAttribute("y1", a.y + (edy / edist) * sR);
+    line.setAttribute("x2", b.x - (edx / edist) * tR);
+    line.setAttribute("y2", b.y - (edy / edist) * tR);
+    const hl = selected === src || selected === tgt;
+    line.setAttribute("class", "edge" + (hl ? " highlight" : ""));
+  });
+
+  // 更新节点位置
+  const magnified = getMagnified();
+  const hasSel = magnified.size > 0;
+  svgCache.nodeGroups.forEach((g, name) => {
+    const p = posMap.get(name);
+    const n = nodes.find(nn => nn.name === name);
+    if (!p || !n) { g.setAttribute("visibility", "hidden"); return; }
+    g.setAttribute("visibility", "visible");
+    g.setAttribute("transform", `translate(${p.x},${p.y})`);
+    const isMeta = nodeCats(n).includes("元技能");
+    const isWarn = DATA.isolated.includes(name);
+    g.setAttribute("class", "node " + (isMeta ? "meta " : "domain ") + (isWarn ? "warn " : "") + (selected === name ? "selected" : ""));
+    // 半径：选中 2×，关联 1.5×
+    const baseR = nodeCats(n).includes("元技能") ? 6 : 5;
+    const mag = magnified.has(name);
+    const isSel = selected === name;
+    if (mag) { g.parentNode.appendChild(g); }  // 置顶
+    const r = isSel ? baseR * 4 : (mag ? Math.round(baseR * 1.5) : baseR);
+    const c = svgCache.nodeCircles.get(name);
+    if (c) { c.setAttribute("r", r); c.setAttribute("fill", catColor(nodeCats(n)[0] || "未分类")); c.setAttribute("opacity", (hasSel && !mag) ? "0.25" : "1"); }
+    // 文本：仅 magnified 节点显示
+    const t = g.querySelector('text');
+    if (t) {
+      if (mag) {
+        const label = n.title || ("/" + n.name);
+        t.textContent = label;
+        t.setAttribute("visibility", "visible");
+        if (isSel) t.setAttribute("font-size", "14");
+        else t.setAttribute("font-size", "12");
+      } else {
+        t.setAttribute("visibility", "hidden");
+      }
+    }
+  });
+  if (showEnvelopes) {
+    drawTerritories(svg, nodes);
+  } else {
+    svg.querySelectorAll('.envelope').forEach(el => el.remove());
+  }
+  drawOrbits(svg);
+  if (showClusters) {
+    drawClusterCenters(svg);
+  } else {
+    svg.querySelectorAll('.cluster-center').forEach(el => el.remove());
+  }
+  // 高亮节点置顶：在所有元素之上
+  svgCache.nodeGroups.forEach((g, name) => {
+    if (magnified.has(name)) { g.parentNode.appendChild(g); }
+  });
+}
+
+function drawOrbits(svg) {
+  if (!sim || svg.querySelector('.orbit-ring')) return;
+  const centers = sim.getZoneCenters();
+  if (!centers) return;
+  const drawn = new Set();
+  centers.forEach((pos) => {
+    const R = Math.hypot(pos.x - CIRCLE_CX, pos.y - CIRCLE_CY);
+    const key = Math.round(R / 5) * 5;
+    if (drawn.has(key)) return;
+    drawn.add(key);
+    const c = svgEl('circle');
+    c.setAttribute('class', 'orbit-ring');
+    c.setAttribute('cx', CIRCLE_CX); c.setAttribute('cy', CIRCLE_CY);
+    c.setAttribute('r', key);
+    c.setAttribute('fill', 'none');
+    c.setAttribute('stroke', 'rgba(140,180,240,0.25)');
+    c.setAttribute('stroke-width', '0.8');
+    c.setAttribute('stroke-dasharray', '6 12');
+    c.setAttribute('pointer-events', 'none');
+    svg.insertBefore(c, svg.firstChild);
+  });
+}
+
+function render() {
+  const nodes = visibleNodes();
+  if (selected && !nodes.some((n) => n.name === selected)) selected = null;
+  if (isMobile()) {
+    renderMobileCards(nodes);
+    renderGraph(nodes);
+  } else {
+    renderList(nodes);
+    renderGraph(nodes);
+    renderDetail();
+    renderWarnings();
+    renderIsolated();
+  }
+}
+
+function isMobile() {
+  return window.innerWidth <= 768;
+}
+
+function renderMobileCards(nodes) {
+  const box = $("mobileCards");
+  if (!box) return;
+  box.innerHTML = "";
+  nodes.forEach(n => {
+    const rels = n.relations || {};
+    const relNames = [];
+    Object.entries(rels).forEach(([k, arr]) => {
+      if (arr && arr.length) arr.forEach(t => relNames.push(
+        '<code>/' + escapeHtml(t) + '</code> <span style="color:var(--muted)">' + (DATA.relationLabels[k]||k) + '</span>'
+      ));
+    });
+    const div = document.createElement("div");
+    div.className = "card";
+    div.onclick = () => {
+      selected = n.name;
+      openMobileDetail();
+    };
+    div.innerHTML =
+      '<div class="card-name">/' + escapeHtml(n.name) + '</div>' +
+      '<div class="card-meta">' +
+        nodeCats(n).map(c => '<span class="badge">' + escapeHtml(c) + '</span>').join("") +
+        '<span class="badge gray">' + escapeHtml(n.scope||"") + '</span>' +
+        '<span class="badge green">' + escapeHtml(n.status||"") + '</span>' +
+      '</div>' +
+      '<div class="card-purpose">' + escapeHtml(truncate(n.purpose||"", 120)) + '</div>' +
+      (relNames.length ? '<div class="card-relations">' + relNames.join(" ") + '</div>' : '');
+    box.appendChild(div);
+  });
+  $("nodeCount").textContent = nodes.length;
+  $("edgeCount").textContent = DATA.edges.filter(e => nodes.some(n => n.name === e.source) && nodes.some(n => n.name === e.target)).length;
+}
+
+function openMobileDetail() {
+  if (!selected) return;
+  const node = DATA.nodes.find(n => n.name === selected);
+  if (!node) return;
+  const notes = (node.notes && node.notes.length)
+    ? '<ul>' + node.notes.map(x => '<li>' + escapeHtml(x) + '</li>').join("") + '</ul>'
+    : '<div class="small">无备注。</div>';
+  $("mobileDetailContent").innerHTML =
+    '<h3 style="margin:0 0 8px">/' + escapeHtml(node.name) + '</h3>' +
+    '<div style="margin-bottom:10px">' +
+      nodeCats(node).map(c => '<span class="badge">' + escapeHtml(c) + '</span>').join("") +
+      '<span class="badge gray">' + escapeHtml(node.scope||"") + '</span>' +
+      '<span class="badge green">' + escapeHtml(node.status||"") + '</span>' +
+    '</div>' +
+    '<div class="kv"><strong>用途</strong>' + escapeHtml(node.purpose||"") + '</div>' +
+    '<div class="kv"><strong>关系</strong>' + relationRows(node) + '</div>' +
+    '<div class="kv"><strong>备注</strong>' + notes + '</div>';
+  $("mobileDetailOverlay").classList.add("open");
+  $("mobileDetailSheet").classList.add("open");
+}
+
+function closeMobileDetail() {
+  $("mobileDetailOverlay").classList.remove("open");
+  $("mobileDetailSheet").classList.remove("open");
+}
+
+function initMobile() {
+  if (window._mobileInitialized) return;
+  window._mobileInitialized = true;
+  const tabs = document.querySelectorAll(".mobile-tab");
+  const cards = $("mobileCards");
+  const stats = $("mobileStats");
+  const graphPanel = $("mobileGraphPanel");
+
+  function switchTab(tab) {
+    tabs.forEach(b => b.classList.remove("active"));
+    var btn = document.querySelector('.mobile-tab[data-tab="' + tab + '"]');
+    if (btn) btn.classList.add("active");
+    if (cards) cards.style.display = (tab === "cards") ? "block" : "none";
+    if (stats) stats.style.display = (tab === "filters") ? "block" : "none";
+    var layout = document.querySelector(".layout");
+    if (layout) layout.style.display = (tab === "graph") ? "grid" : "none";
+    if (graphPanel) graphPanel.style.display = "none";
+    if (tab === "filters") renderMobileStats();
+    if (tab === "graph") renderGraph(visibleNodes());
+  }
+
+  tabs.forEach(t => {
+    t.addEventListener("click", () => { switchTab(t.dataset.tab); });
+  });
+
+  // Detail close
+  $("mobileDetailClose").addEventListener("click", closeMobileDetail);
+  $("mobileDetailOverlay").addEventListener("click", (e) => {
+    if (e.target === $("mobileDetailOverlay")) closeMobileDetail();
+  });
+  switchTab("cards");
+}
+
+function renderMobileGraph() {
+  const panel = $("mobileGraphPanel");
+  if (!panel) return;
+  const nodes = visibleNodes();
+  const edges = DATA.edges.filter(e => nodes.some(n => n.name === e.source) && nodes.some(n => n.name === e.target));
+  // Build edge index: for each node, list its connected nodes
+  const nodeMap = {};
+  edges.forEach(e => {
+    (nodeMap[e.source] = nodeMap[e.source] || []).push(e.target);
+    (nodeMap[e.target] = nodeMap[e.target] || []).push(e.source);
+  });
+  // Sort nodes by connection count descending
+  const sorted = nodes.slice().sort((a, b) => (nodeMap[b.name]||[]).length - (nodeMap[a.name]||[]).length);
+  let html = "";
+  sorted.forEach(n => {
+    const conns = nodeMap[n.name] || [];
+    html += '<div style="padding:12px 14px;border-bottom:1px solid var(--border);font-size:13px">' +
+      '<span style="font-weight:700">/' + escapeHtml(n.name) + '</span>' +
+      '<span style="color:var(--muted);float:right">' + conns.length + ' 连接</span>' +
+      (conns.length ? '<div style="margin-top:4px;color:var(--muted);font-size:12px">→ ' +
+        conns.slice(0,6).map(c => '<code>/' + escapeHtml(c) + '</code>').join(' ') +
+        (conns.length > 6 ? ' ...' : '') + '</div>' : '') +
+      '</div>';
+  });
+  panel.innerHTML = html || '<div class="mobile-empty">无数据</div>';
+}
+
+function renderMobileStats() {
+  const nodes = visibleNodes();
+  const edges = DATA.edges.filter(e => nodes.some(n => n.name === e.source) && nodes.some(n => n.name === e.target));
+  const cats = new Set();
+  nodes.forEach(n => nodeCats(n).forEach(c => cats.add(c)));
+  const isolated = DATA.isolated.filter(n => nodes.some(nn => nn.name === n));
+
+  $("statTotal").textContent = nodes.length;
+  $("statEdges").textContent = edges.length;
+  $("statCategories").textContent = cats.size;
+  $("statIsolated").textContent = isolated.length;
+
+  // Category bar chart
+  const catCount = {};
+  nodes.forEach(n => {
+    const c = nodeCats(n)[0] || "未分类";
+    catCount[c] = (catCount[c] || 0) + 1;
+  });
+  const maxCount = Math.max(1, ...Object.values(catCount));
+  let bars = "";
+  Object.entries(catCount).sort((a,b) => b[1] - a[1]).forEach(([cat, count]) => {
+    const pct = Math.round(count / maxCount * 100);
+    bars += '<div style="display:flex;align-items:center;margin-bottom:8px;gap:8px">' +
+      '<span style="font-size:12px;min-width:64px;text-align:right;color:var(--muted)">' + escapeHtml(cat) + '</span>' +
+      '<div style="flex:1;background:#f3f4f6;border-radius:6px;height:20px;overflow:hidden">' +
+        '<div style="width:' + pct + '%;height:100%;background:' + catColor(cat) + ';border-radius:6px"></div>' +
+      '</div>' +
+      '<span style="font-size:12px;font-weight:700;min-width:24px">' + count + '</span>' +
+    '</div>';
+  });
+  $("statCategoryBars").innerHTML = bars || '<div class="mobile-empty">无数据</div>';
+
+  $("nodeCount").textContent = nodes.length;
+  $("edgeCount").textContent = edges.length;
+}
+
+
+optionList($("category"), "全部分类", DATA.categories);
+optionList($("scope"), "全部范围", DATA.scopes);
+optionList($("status"), "全部状态", DATA.statuses);
+
+["search", "category", "scope", "status"].forEach((id) => {
+  $(id).addEventListener("input", render);
+  $(id).addEventListener("change", render);
+});
+
+$("showEnvelopes").addEventListener("change", () => {
+  showEnvelopes = $("showEnvelopes").checked;
+  render();
+});
+$("showClusters").addEventListener("change", () => {
+  showClusters = $("showClusters").checked;
+  render();
+});
+
+// 移动端初始化（Tab栏 / 筛选面板 / 详情Sheet）
+if (isMobile()) initMobile();
+
+// SVG 层级拖拽事件（全局捕获，快速移动不丢节点）
+const svgElm = $("graph");
+svgElm.addEventListener("pointerdown", (evt) => {
+  // 点击 SVG 空白区域 → 平移画布（不干扰节点拖拽）
+  if (isDragging) return;
+  if (evt.target === svgElm || evt.target.tagName === "line" || evt.target.classList.contains("envelope")) {
+    isPanning = true;
+    dragSvg = svgElm;
+    panStartX = evt.clientX;
+    panStartY = evt.clientY;
+    panVbX = vbX;
+    panVbY = vbY;
+    svgElm.style.cursor = "grabbing";
+    svgElm.setPointerCapture(evt.pointerId);
+    evt.stopPropagation();
+    evt.preventDefault();
+  }
+});
+svgElm.addEventListener("pointermove", onSvgDrag);
+svgElm.addEventListener("pointerup", onSvgDragEnd);
+svgElm.addEventListener("pointercancel", onSvgDragEnd);
+svgElm.addEventListener("contextmenu", (evt) => {
+  evt.preventDefault();
+  selected = null;
+  hovered = null;
+  panelDirty = true;
+});
+svgElm.addEventListener("wheel", (evt) => {
+  evt.preventDefault();
+  const pt = svgElm.createSVGPoint();
+  pt.x = evt.clientX; pt.y = evt.clientY;
+  const svgP = pt.matrixTransform(svgElm.getScreenCTM().inverse());
+  const mx = svgP.x, my = svgP.y;
+  const scale = evt.deltaY > 0 ? 1.15 : 0.87;
+  const nw = vbW * scale, nh = vbH * scale;
+  if (nw < 200 || nw > 4000) return;
+  const rx = (mx - vbX) / vbW, ry = (my - vbY) / vbH;
+  vbX = mx - rx * nw; vbY = my - ry * nh;
+  vbW = nw; vbH = nh;
+  updateViewBox();
+}, {passive: false});
+
+let _lastMobile = isMobile();
+window.addEventListener("resize", () => {
+  const now = isMobile();
+  if (now !== _lastMobile) { _lastMobile = now; render(); }
+});
+
+if (isMobile()) initMobile();
+render();
+requestAnimationFrame(physicsTick);
+</script>
+</body>
+</html>

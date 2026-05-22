@@ -1,0 +1,261 @@
+/* ============================================================
+   SKILL_GRAPH.html 移动端适配样式 — mobile-styles.css
+   屏幕宽度 ≤ 768px 时自动切换为卡片流 + 底部 Tab 栏
+   桌面端 (>768px) 保持力导向图，本文件不影响原有布局
+   ============================================================ */
+
+/* ---- 断点内才生效 ---- */
+@media (max-width: 768px) {
+
+  /* ---- 全局 ---- */
+  body {
+    padding-bottom: 72px;  /* 给底部 Tab 栏留空间 */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ---- Header 收缩 ---- */
+  header {
+    padding: 14px 16px 10px !important;
+  }
+  header h1 {
+    font-size: 20px !important;
+  }
+  header .sub {
+    font-size: 12px !important;
+    line-height: 1.5;
+  }
+
+  /* ---- 搜索栏固定在顶部 ---- */
+  .toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    padding: 8px 16px 10px !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+  .toolbar input {
+    grid-column: 1 / -1;
+    font-size: 16px !important;           /* 触摸优化：防 iOS 缩放 */
+    padding: 12px 14px !important;
+  }
+  .toolbar select {
+    font-size: 14px !important;
+    padding: 10px 8px !important;
+  }
+
+  /* ---- 隐藏桌面端面板（力导向图 / 侧栏列表 / 详情 / footer） ---- */
+  .layout,
+  .footer-panels {
+    display: none !important;
+  }
+
+  /* ---- 卡片流布局：从 skillList 面板复用数据 ---- */
+  /* 策略：用 JS 动态生成卡片是最佳方式，CSS 只定义卡片样式。
+     如果 HTML 中已存在 <section class="mobile-cards"> 则直接铺开 */
+  .mobile-cards,
+  .mobile-graph-panel {
+    display: block !important;
+    padding: 0 12px 16px;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+    transition: background 0.15s;
+  }
+  .card:active {
+    background: var(--accent-soft);
+  }
+
+  .card .card-name {
+    font-weight: 700;
+    font-size: 16px;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+
+  .card .card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+
+  .card .card-purpose {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.55;
+    margin-bottom: 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .card .card-relations {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .card .card-relations code {
+    background: #f3f4f6;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+
+  /* ---- 移动端统计面板 ---- */
+  .mobile-stats {
+    display: none;
+    padding: 12px 16px 20px;
+  }
+  .stat-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    display: inline-block;
+    width: calc(50% - 8px);
+    margin: 0 4px 10px;
+    box-shadow: 0 2px 6px rgba(15,23,42,0.04);
+  }
+  .stat-number {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+  .stat-label {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .mobile-stats h3 {
+    font-size: 14px;
+    margin: 8px 0 12px;
+  }
+
+  /* ---- 底部 Tab 栏 ---- */
+  .mobile-tabs {
+    display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -2px 12px rgba(15, 23, 42, 0.08);
+    height: 64px;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+
+  .mobile-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 500;
+    border: none;
+    background: none;
+    padding: 8px 4px;
+    transition: color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-tab.active {
+    color: var(--accent);
+  }
+
+  .mobile-tab .tab-icon {
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  /* ---- 详情弹出层（移动端从底部滑出） ---- */
+  .mobile-detail-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+  }
+  .mobile-detail-overlay.open {
+    display: block;
+  }
+
+  .mobile-detail-sheet {
+    position: fixed;
+    bottom: 64px;  /* Tab 栏上方 */
+    left: 0;
+    right: 0;
+    max-height: 60vh;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.12);
+    padding: 20px 16px 24px;
+    overflow-y: auto;
+    z-index: 301;
+    transform: translateY(100%);
+    transition: transform 0.25s ease;
+  }
+  .mobile-detail-sheet.open {
+    transform: translateY(0);
+  }
+
+  .mobile-detail-sheet .close-btn {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: #f3f4f6;
+    font-size: 18px;
+    line-height: 32px;
+    text-align: center;
+    cursor: pointer;
+    color: var(--muted);
+  }
+
+  /* ---- 触摸优化 ---- */
+  /* 最小触摸目标 44×44px (Apple HIG) */
+  button, select, .card, .mobile-tab {
+    min-height: 44px;
+  }
+
+  /* 禁用文本选择（卡片和按钮） */
+  .card, .mobile-tab, button {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* 滚动惯性和橡皮筋 */
+  .mobile-cards {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: auto;
+  }
+
+  /* ---- 空状态 ---- */
+  .mobile-empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 48px 16px;
+    font-size: 14px;
+  }
+
+}
